@@ -1,0 +1,11 @@
+climateforcing==0.1.0
+h5py
+jupyter
+matplotlib
+numpy
+netcdf4
+pandas
+scipy
+statsmodels
+tqdm
+wquantiles
