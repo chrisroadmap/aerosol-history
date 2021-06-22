@@ -1,8 +1,12 @@
 # Energy Budget Constraints on the Time History of Aerosol Forcing and Climate Sensitivity
 This code demonstrates how we can use constraints of observed surface warming from 1850-2019 and ocean heat update from 1971-2018 to constrain historical aerosol forcing, equilibrium climate sensitivity and transient climate response.
 
-## Reference
-The paper describing this method is under review at the moment. The preprint can be accessed here: https://www.essoar.org/doi/abs/10.1002/essoar.10503977.2
+## Reference and citation
+The paper describing this method has been accepted in JGRA. The accepted version can be accessed here: https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2020JD033622
+
+Please cite as:
+
+Smith, C. J., Harris, G. R., Palmer, M. D., Bellouin, N., Collins, W., Myhre, G., et al. (2021). Energy Budget Constraints on the Time History of Aerosol Forcing and Climate Sensitivity. Journal of Geophysical Research: Atmospheres, 126, e2020JD033622. https://doi.org/10.1029/2020JD033622
 
 ## Reproduction
 As always, the best way to avoid disaster is to use a virtual environment. My weapon of choice is miniconda3 (https://docs.conda.io/en/latest/miniconda.html). For this code more than ever it is a good idea to use `conda`, as code makes heavy use of `iris` which is difficult(/impossible?) to install through `pip`. Therefore, create a new environment, activate it, and use `conda` to grab `iris`:
