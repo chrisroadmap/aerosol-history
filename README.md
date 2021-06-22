@@ -17,7 +17,7 @@ When this is done, grab the repo-specific dependencies:
 
     pip install -r requirements.txt
 
-Once set up, run the notebooks in the `notebooks` directory in order. Some notebooks take a while, e.g. the two-layer model calculations for 13 models (notebook 02) and the internal variability calculation (notebook 00).
+Once set up, run the notebooks in the `notebooks` directory in order. Some notebooks take a while, e.g. the two-layer model calculations for 13 models (notebook 30) and the internal variability calculation (notebook 10).
 
 In the `scripts` directory is the code that runs the APRP decomposition for the 11 climate models used in the paper. However, these scripts won't run because they require the CMIP6 and E3SM data (the file names point to my local paths, and they are not supplied here due to file sizes, but all are available either from the ESGF portal or https://esgf-node.llnl.gov/projects/e3sm/). The important data that is required to reproduce the results is shipped in the directories `input_data` (if it is a raw input) or `output_data` (if somewhere along the process, the code calculates it).
 
