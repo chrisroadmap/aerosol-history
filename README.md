@@ -1,6 +1,9 @@
 # Energy Budget Constraints on the Time History of Aerosol Forcing and Climate Sensitivity
 This code demonstrates how we can use constraints of observed surface warming from 1850-2019 and ocean heat update from 1971-2018 to constrain historical aerosol forcing, equilibrium climate sensitivity and transient climate response.
 
+![Comparison of constrained aerosol forcing and CMIP6 models from 1850 to 2019](figures/models_v_constrained.png?raw=true)
+Comparison of the energy-budget constrained aerosol forcing best estimate (thick grey line) and 5-95% range (grey shaded band) with CMIP6 model aerosol forcing results (coloured). CMIP6 individual years are coloured points and a 11-year Savitzy-Golay smoothing filter is applied to these model results to produce smoothed model time series estimates (coloured lines). Note this plot is using an 1850 baseline for direct comparison with CMIP6 models, whereas all results in the paper use a 1750 baseline for "pre-industrial" conditions.
+
 ## Reference and citation
 The paper describing this method has been accepted in JGRA. The accepted version can be accessed here: https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2020JD033622
 
