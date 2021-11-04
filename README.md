@@ -5,11 +5,11 @@ This code demonstrates how we can use constraints of observed surface warming fr
 Comparison of the energy-budget constrained aerosol forcing best estimate (thick grey line) and 5-95% range (grey shaded band) with CMIP6 model aerosol forcing results (coloured). CMIP6 individual years are coloured points and a 11-year Savitzy-Golay smoothing filter is applied to these model results to produce smoothed model time series estimates (coloured lines). Note this plot is using an 1850 baseline for direct comparison with CMIP6 models, whereas all results in the paper use a 1750 baseline for "pre-industrial" conditions.
 
 ## Reference and citation
-The paper describing this method has been accepted in JGRA. The accepted version can be accessed here: https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2020JD033622
+The paper describing this method is published in Journal of Geophysical Research Atmospheres and available as an open-access paper at https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2020JD033622.
 
 Please cite as:
 
-Smith, C. J., Harris, G. R., Palmer, M. D., Bellouin, N., Collins, W., Myhre, G., et al. (2021). Energy Budget Constraints on the Time History of Aerosol Forcing and Climate Sensitivity. Journal of Geophysical Research: Atmospheres, 126, e2020JD033622. https://doi.org/10.1029/2020JD033622
+Smith, C. J., Harris, G. R., Palmer, M. D., Bellouin, N., Collins, W., Myhre, G., Schulz, M., Golaz, J.-C., Ringer, M., Storelvmo, T., Forster, P. M., (2021). Energy Budget Constraints on the Time History of Aerosol Forcing and Climate Sensitivity. Journal of Geophysical Research: Atmospheres, 126, e2020JD033622. https://doi.org/10.1029/2020JD033622
 
 ## Reproduction
 As always, the best way to avoid disaster is to use a virtual environment. My weapon of choice is miniconda3 (https://docs.conda.io/en/latest/miniconda.html). For this code more than ever it is a good idea to use `conda`, as code makes heavy use of `iris` which is difficult(/impossible?) to install through `pip`. Therefore, create a new environment, activate it, and use `conda` to grab `iris`:
