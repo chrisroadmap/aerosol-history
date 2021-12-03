@@ -1,0 +1,18 @@
+name: aerosol-history
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - h5py
+  - iris
+  - jupyter
+  - matplotlib
+  - numpy
+  - pandas
+  - scipy
+  - statsmodels
+  - tqdm
+  - wquantiles
+  - pip
+  - pip:
+    - climateforcing==0.1.0  # temp install with pip as this version not on conda
