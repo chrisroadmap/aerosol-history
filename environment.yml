@@ -1,8 +1,10 @@
 name: aerosol-history
 channels:
+  - chrisroadmap
   - conda-forge
   - defaults
 dependencies:
+  - fair
   - h5py
   - iris
   - jupyter
