@@ -8,6 +8,7 @@
 data_input/rcmip/
 data_input/ceds/
 data_input/input4mips/
+data_input/ar6_erf/
 
 # large output datafiles created by the code and too big for GitHub
 data_output/piControl/
