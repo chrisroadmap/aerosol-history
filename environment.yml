@@ -1,0 +1,19 @@
+name: aerosol-history
+channels:
+  - chrisroadmap
+  - conda-forge
+dependencies:
+  - python==3.11
+  - climateforcing==0.3.0
+  - h5py
+  - iris
+  - jupyter
+  - jupytext
+  - matplotlib
+  - numpy
+  - netcdf4
+  - pandas
+  - scipy
+  - statsmodels
+  - tqdm
+  - wquantiles
