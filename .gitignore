@@ -1,3 +1,6 @@
+# don't commit notebooks with jupytext
+*.ipynb
+
 # MacOS
 .DS_Store
 

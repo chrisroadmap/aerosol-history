@@ -412,6 +412,9 @@ emulated['mean_emulation']['ERFaci'] = ghan([
 ], coeff['mean']['ERFaci']['beta'], coeff['mean']['ERFaci']['n0'], coeff['mean']['ERFaci']['n1'])
 
 # %%
+coeff
+
+# %%
 fig, ax = pl.subplots(1,3,figsize=(19/2.54,9.5/2.54), squeeze=False)
 for model in models:
     ax[0,0].set_title('ERFari')
