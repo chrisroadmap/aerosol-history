@@ -13,7 +13,7 @@
 # ---
 
 # %% [markdown]
-# # Historical projections with the new aerosol coefficients
+# # Historical projections with the new aerosol coefficients and emissions and constraints updated to 2022 and the dust forcing
 
 # %%
 # todo: most of these imports are redundant!
@@ -41,6 +41,7 @@ import random
 import h5py
 from zipfile import ZipFile
 from climateforcing.twolayermodel import TwoLayerModel
+import scipy
 
 
 # %%
@@ -112,50 +113,45 @@ pl.rcParams['xtick.top'] = True
 pl.rcParams['figure.dpi'] = 96
 
 # %% [markdown]
-# ## von Schuckmann ocean heat uptake
+# ## IGCC ocean heat uptake
 #
 # the citation is https://www.earth-syst-sci-data-discuss.net/essd-2019-255/
 
 # %%
-nc = Dataset('../data_input/GCOS_all_heat_content_1960-2018_ZJ_v22062020.nc')
-#print(nc.variables)
-ohctop = nc.variables['ohc_0-2000m'][:]
-ohcbot = nc.variables['ohc_below_2000m'][:]
-atmosh = nc.variables['atmospheric_heat_content'][:]
-cryosh = nc.variables['energy_cryosphere'][:]
-landhc = nc.variables['ground_heat_content'][:]
-ohctopu = nc.variables['ohc_0-2000m_uncertainty'][:]
-ohcbotu = nc.variables['ohc_below_2000m_uncertainty'][:]
-atmoshu = nc.variables['atmospheric_heat_content_uncertainty'][:]
-cryoshu = nc.variables['energy_cryosphere_uncertainty'][:]
-landhcu = nc.variables['ground_heat_content_uncertainty'][:]
-nc.close()
-cryosh[-1] = cryosh[-2]  # nan for 2017-2018, assume no change
-cryoshu[-1] = cryoshu[-2]
-OHCobs = (ohctop+ohcbot+atmosh+cryosh+landhc)-(ohctop+ohcbot+atmosh+cryosh+landhc)[11]
+df_eei = pd.read_csv('../data_input/IGCC2022_earth_energy_imbalance.csv', index_col=0)
+OHCobs = (df_eei.loc[:2020.5, 'Total'] - df_eei.loc[1971.5, 'Total']).values
 print(OHCobs[-1])
 #OHCobs_u = np.sqrt(ohctopu**2 + ohcbotu**2 + atmoshu**2 + cryoshu**2 + landhcu**2)
 #pl.fill_between(np.arange(1960.5, 2019), OHCobs - 2 * OHCobs_u, OHCobs + 2 * OHCobs_u, alpha=0.3)
 #pl.plot(np.arange(1960.5,2019), OHCobs)
 
 # %% [markdown]
-# ## Non-aerosol forcing is based on SSP2-4.5
-#
-# - externally supplied and could be updated when AR6 approved
-# - this is an update of the RCMIP time series
+# ## Load in the dust forcing
 
 # %%
-ssp245_allforcing = pd.read_csv('../data_input/ERF_ssp245_1750-2500.csv')
-baseline_forcing = ssp245_allforcing[:270].copy()
+dust_nc = Dataset('../data_input/Dust_radiative_forcing_timeseries_N1e5.nc')
+dust_forcing = np.zeros((273, 100000))
+#dust_nc.variables['year'][:]
+#dust_nc.variables['n'][:]
+#dust_nc.variables['ensemble members'][:]
+dust_forcing[100:, :] = dust_nc.variables['ensemble members'][:173, :]
+dust_forcing[:101, :] = np.linspace(0, dust_forcing[100, :], 101, axis=0)
+pl.plot(dust_forcing);
+dust_nc.close()
+
+# %% [markdown]
+# ## Non-aerosol forcing is based on IGCC 2022
+
+# %%
+ssp245_allforcing = pd.read_csv('../data_input/IGCC2022_ERF_best_aggregates_1750-2022.csv')
+baseline_forcing = ssp245_allforcing[:].copy()
 
 baseline_forcing.drop(
-    labels=['total_anthropogenic','total'],
+    labels=['timebound_lower','timebound_upper'],
     axis='columns',
     inplace=True
 )
-baseline_forcing['total_anthropogenic'] = baseline_forcing[['co2','ch4','n2o','other_wmghg','o3_tropospheric','o3_stratospheric','h2o_stratospheric','contrails','bc_on_snow','land_use','aerosol-radiation_interactions','aerosol-cloud_interactions']].sum(axis=1)
-baseline_forcing['total'] = baseline_forcing['total_anthropogenic'] + baseline_forcing['total_natural']
-baseline_forcing.set_index('year', inplace=True)
+baseline_forcing.set_index('time', inplace=True)
 pd.set_option('display.max_rows', 999)
 baseline_forcing
 
@@ -163,16 +159,14 @@ baseline_forcing
 baseline_forcing.index
 
 # %%
-# Temperature (GMST) observations: Cowtan and Way, accessed 24 November 2020
-cw_temp = np.loadtxt('../data_input/CW.txt')
+# Temperature (GMST) observations: IGCC 2022
+temp = pd.read_csv('../data_input/IGCC2022_annual_averages.csv')['gmst'].values
 
 # %%
-# GSAT/GMST ratio. Use CMIP5 ratio, calculated by me for Rogelj et al. 2019, method originally from Richardson et al. 2016
-blratio = np.loadtxt('../data_input/cmip5_data_2019.txt')[5,:]
-cowtan = cw_temp[:,1] - np.mean(cw_temp[:51,1])
-years  = cw_temp[:,0]+0.5
-blratio  = np.concatenate((np.ones(11), blratio))
-Tobs = blratio * cowtan
+# GSAT/GMST ratio. Following IPCC we assume this is 1.
+blratio = 1
+years  = np.arange(1850.5, 2023)
+Tobs = blratio * temp
 pl.plot(years, Tobs)
 #pl.plot(np.arange(1750,1901), best_land)
 print(np.mean(Tobs[:51]))
@@ -291,32 +285,54 @@ geoff_sample_df
 seed    = 36572 
 zscore = st.norm.ppf(0.95)
 
-# can only use published literature - so revert to FaIR and AR5 uncertainties. Use unmodified Etminan for methane, because RFMIP
-# models central estimate is quite close.
+# update these ranges for AR6
 unc_ranges = np.array([
-    0.20,      # CO2
-    0.28,      # CH4: updated value from etminan 2016
-    0.20,      # N2O
-    0.20,      # other WMGHGS
-    0.50,      # tropospheric O3
-    2.00,      # stratospheric O3
+    0.12,      # CO2
+    0.20,      # CH4: updated value from etminan 2016
+    0.14,      # N2O
+    0.19,      # other WMGHGS
+    0.50,      # O3
     1.00,      # stratospheric WV from CH4
-    (98-57.4)/57.4,      # contrails
-    0.00,      # black carbon on snow (lognormal)
-    0.75,      # land use change
-    0.50,      # volcanic
+    0.00,      # contrails (non-symmetric)
+    0.00,      # black carbon on snow (non-symmetric)
+    0.50,      # land use change
+    0.25,      # volcanic
     0.50,      # solar (amplitude)
 ])/(zscore)
 
-scale = st.norm.rvs(size=(samples,12), loc=np.ones((samples,12)), scale=np.ones((samples, 12)) * unc_ranges[None,:], random_state=seed)
-scale[:,8] = st.lognorm.rvs(0.5, size=samples, random_state=seed+1)
+def opt(x, q05_desired, q50_desired, q95_desired):
+    "x is (a, loc, scale) in that order."
+    q05, q50, q95 = scipy.stats.skewnorm.ppf(
+        (0.05, 0.50, 0.95), x[0], loc=x[1], scale=x[2]
+    )
+    return (q05 - q05_desired, q50 - q50_desired, q95 - q95_desired)
 
-# contrails slightly asymmetric
-scale[scale[:,7]<1,7] = (57.4-19)/(98-57.4)*(scale[scale[:,7]<1,7]-1) + 1
+scale = st.norm.rvs(size=(samples,11), loc=np.ones((samples,11)), scale=np.ones((samples, 11)) * unc_ranges[None,:], random_state=seed)
+
+lapsi_params = scipy.optimize.root(opt, [1, 1, 1], args=(0, 1, 2.25)).x
+contrails_params = scipy.optimize.root(opt, [1, 1, 1], args=(19 / 57, 1, 98 / 57)).x
+
+# contrails 
+scale[:, 6] = scipy.stats.skewnorm.rvs(
+    contrails_params[0],
+    loc=contrails_params[1],
+    scale=contrails_params[2],
+    size=samples,
+    random_state=3701585,
+)
+
+# lapsi
+scale[:, 7] = scipy.stats.skewnorm.rvs(
+    lapsi_params[0],
+    loc=lapsi_params[1],
+    scale=lapsi_params[2],
+    size=samples,
+    random_state=3701584,
+)
 
 scale_df = pd.DataFrame(
     data = scale,
-    columns = ['co2','ch4','n2o','other_wmghg','o3_tropospheric','o3_stratospheric','h2o_stratospheric','contrails','bc_on_snow','land_use','volcanic','solar']
+    columns = ['CO2','CH4','N2O','halogen','O3','H2O_stratospheric','contrails','BC_on_snow','land_use','volcanic','solar']
 )
 scale_df
 
@@ -327,160 +343,17 @@ pl.hist(scale[:,7])
 trend_solar = st.norm.rvs(size=samples, loc=0, scale=0.1/zscore, random_state=138294)
 
 # %% [markdown]
-# ## Construct CMIP6 emissions-based forcing
+# ## Get SLCFs from IGCC 2022
 
 # %%
-# Grab CEDS emissions and unzip (RCMIP should already be here)
-check_and_download('../data_input/CEDS_v_2020_09_11_emissions.zip', 'https://zenodo.org/record/4025316/files/CEDS_v_2020_09_11_emissions.zip')
-with ZipFile('../data_input/CEDS_v_2020_09_11_emissions.zip', 'r') as zipObj:
-    zipObj.extractall('../data_input/ceds')
-os.remove('../data_input/CEDS_v_2020_09_11_emissions.zip')
-
-# %%
-emissions = pd.read_csv('../data_input/rcmip/rcmip-emissions-annual-means-v5-1-0.csv')
-df_emissions = pd.concat([emissions.loc[(
-        (emissions.Variable=='Emissions|BC')|
-        (emissions.Variable=='Emissions|OC')|
-        (emissions.Variable=='Emissions|Sulfur')|
-        (emissions.Variable=='Emissions|NOx')|
-        (emissions.Variable=='Emissions|NH3')|
-        (emissions.Variable=='Emissions|VOC')|
-        (emissions.Variable=='Emissions|CO')
-    ) & (emissions.Scenario=='ssp245') & (emissions.Region=='World'), 'Variable'], emissions.loc[(
-        (emissions.Variable=='Emissions|BC')|
-        (emissions.Variable=='Emissions|OC')|
-        (emissions.Variable=='Emissions|Sulfur')|
-        (emissions.Variable=='Emissions|NOx')|
-        (emissions.Variable=='Emissions|NH3')|
-        (emissions.Variable=='Emissions|VOC')|
-        (emissions.Variable=='Emissions|CO')
-    ) & (emissions.Scenario=='ssp245') & (emissions.Region=='World'), '1750':'2100']], axis=1)#.interpolate(axis=1).T
-df_emissions.set_index('Variable', inplace=True)
-df_emissions = df_emissions.interpolate(axis=1).T
-df_emissions.rename(
-    columns={
-        'Emissions|BC': 'BC',
-        'Emissions|OC': 'OC',
-        'Emissions|Sulfur': 'SO2',
-        'Emissions|NOx': 'NOx',
-        'Emissions|NH3': 'NH3',
-        'Emissions|VOC': 'VOC',
-        'Emissions|CO': 'CO'
-    }, inplace=True
-)
-# only keep cols we want
-emissions = df_emissions[['SO2', 'BC', 'OC', 'NH3', 'NOx', 'VOC', 'CO']]
-emissions.index = emissions.index.astype('int')
-emissions.index.name='year'
-emissions.columns.name=None
-
-emissions_ceds_update = emissions.copy()
-
-emissions_old = pd.read_csv('../data_input/rcmip/rcmip-emissions-annual-means-v5-1-0.csv')
-df_emissions = pd.concat([emissions_old.loc[(
-        (emissions_old.Variable=='Emissions|BC|MAGICC Fossil and Industrial')|
-        (emissions_old.Variable=='Emissions|OC|MAGICC Fossil and Industrial')|
-        (emissions_old.Variable=='Emissions|Sulfur|MAGICC Fossil and Industrial')|
-        (emissions_old.Variable=='Emissions|NOx|MAGICC Fossil and Industrial')|
-        (emissions_old.Variable=='Emissions|NH3|MAGICC Fossil and Industrial')|
-        (emissions_old.Variable=='Emissions|VOC|MAGICC Fossil and Industrial')|
-        (emissions_old.Variable=='Emissions|CO|MAGICC Fossil and Industrial')|
-        (emissions_old.Variable=='Emissions|BC|MAGICC AFOLU|Agriculture')|
-        (emissions_old.Variable=='Emissions|OC|MAGICC AFOLU|Agriculture')|
-        (emissions_old.Variable=='Emissions|Sulfur|MAGICC AFOLU|Agriculture')|
-        (emissions_old.Variable=='Emissions|NOx|MAGICC AFOLU|Agriculture')|
-        (emissions_old.Variable=='Emissions|NH3|MAGICC AFOLU|Agriculture')|
-        (emissions_old.Variable=='Emissions|VOC|MAGICC AFOLU|Agriculture')|
-        (emissions_old.Variable=='Emissions|CO|MAGICC AFOLU|Agriculture')
-    ) & (emissions_old.Scenario=='ssp245') & (emissions_old.Region=='World'), 'Variable'], emissions_old.loc[(
-        (emissions_old.Variable=='Emissions|BC|MAGICC Fossil and Industrial')|
-        (emissions_old.Variable=='Emissions|OC|MAGICC Fossil and Industrial')|
-        (emissions_old.Variable=='Emissions|Sulfur|MAGICC Fossil and Industrial')|
-        (emissions_old.Variable=='Emissions|NOx|MAGICC Fossil and Industrial')|
-        (emissions_old.Variable=='Emissions|NH3|MAGICC Fossil and Industrial')|
-        (emissions_old.Variable=='Emissions|VOC|MAGICC Fossil and Industrial')|
-        (emissions_old.Variable=='Emissions|CO|MAGICC Fossil and Industrial')|
-        (emissions_old.Variable=='Emissions|BC|MAGICC AFOLU|Agriculture')|
-        (emissions_old.Variable=='Emissions|OC|MAGICC AFOLU|Agriculture')|
-        (emissions_old.Variable=='Emissions|Sulfur|MAGICC AFOLU|Agriculture')|
-        (emissions_old.Variable=='Emissions|NOx|MAGICC AFOLU|Agriculture')|
-        (emissions_old.Variable=='Emissions|NH3|MAGICC AFOLU|Agriculture')|
-        (emissions_old.Variable=='Emissions|VOC|MAGICC AFOLU|Agriculture')|
-        (emissions_old.Variable=='Emissions|CO|MAGICC AFOLU|Agriculture')
-    ) & (emissions_old.Scenario=='ssp245') & (emissions_old.Region=='World'), '1750':'2100']], axis=1)#.interpolate(axis=1).T
-df_emissions.set_index('Variable', inplace=True)
-df_emissions = df_emissions.interpolate(axis=1).T
-for species in ['BC', 'OC', 'Sulfur', 'NOx', 'NH3', 'VOC', 'CO']:
-    df_emissions[species] = df_emissions['Emissions|{}|MAGICC Fossil and Industrial'.format(species)] + df_emissions['Emissions|{}|MAGICC AFOLU|Agriculture'.format(species)]
-df_emissions.rename(columns = {'Sulfur': 'SO2'}, inplace=True)
-df_emissions.drop(columns=[
-        'Emissions|BC|MAGICC Fossil and Industrial',
-        'Emissions|OC|MAGICC Fossil and Industrial',
-        'Emissions|Sulfur|MAGICC Fossil and Industrial',
-        'Emissions|NOx|MAGICC Fossil and Industrial',
-        'Emissions|NH3|MAGICC Fossil and Industrial',
-        'Emissions|VOC|MAGICC Fossil and Industrial',
-        'Emissions|CO|MAGICC Fossil and Industrial',
-        'Emissions|BC|MAGICC AFOLU|Agriculture',
-        'Emissions|OC|MAGICC AFOLU|Agriculture',
-        'Emissions|Sulfur|MAGICC AFOLU|Agriculture',
-        'Emissions|NOx|MAGICC AFOLU|Agriculture',
-        'Emissions|NH3|MAGICC AFOLU|Agriculture',
-        'Emissions|VOC|MAGICC AFOLU|Agriculture',
-        'Emissions|CO|MAGICC AFOLU|Agriculture',
-    ],
-    inplace=True
-)
-df_emissions.index = emissions.index.astype('int')
-df_emissions.index.name='year'
-df_emissions.columns.name=None
-
-global_total = {}
-for species in ['BC', 'OC', 'SO2', 'NH3', 'NOx', 'NMVOC', 'CO']:
-    df = pd.read_csv('../data_input/ceds/{}_global_CEDS_emissions_by_sector_2020_09_11.csv'.format(species))
-    global_total[species] = df.sum(axis=0).values[3:].astype(float) / 1000 # yes could get openscm on this
-    #unit = df.units[0]
-    #print(unit)
-global_total['VOC'] = global_total.pop('NMVOC')
-new_ceds = pd.DataFrame(global_total)
-new_ceds.index = np.arange(1750,2020)
-new_ceds.index = new_ceds.index.astype('int')
-new_ceds.index.name='year'
-new_ceds.columns.name=None
-emissions_ceds_update = new_ceds.loc[1750:2020] + emissions - df_emissions
-emissions_ceds_update.drop(index=range(2020,2101), inplace=True)
+emissions_ceds_update = pd.read_csv('../data_input/IGCC2024_slcf_emissions_1750-2024.csv', index_col=0)
 emissions_ceds_update
 
 # %%
 #emissions = pd.read_csv('../output_data/historical_slcf_emissions.csv', index_col='year')
-emissions = emissions_ceds_update.drop(['CO','VOC','NOx','NH3'], axis=1)
+emissions = emissions_ceds_update.drop(['CO','NMVOC','NOx','NH3'], axis=1)
 emissions
 
-# %%
-emissions_old_df = pd.read_csv('../data_input/rcmip/rcmip-emissions-annual-means-v5-1-0.csv')
-emissions_old = emissions_old_df.loc[(
-        (emissions_old_df.Variable=='Emissions|BC')|
-        (emissions_old_df.Variable=='Emissions|OC')|
-        (emissions_old_df.Variable=='Emissions|Sulfur')
-    ) & (emissions_old_df.Scenario=='ssp245') & (emissions_old_df.Region=='World'), '1750':'2020'].interpolate(axis=1).T
-emissions_old.columns = ['BC','OC','SO2']
-
-# %%
-fig = pl.figure(figsize=(19/2.54, 9.5/2.54))
-pl.plot(emissions.loc[1750:,'SO2'], label='CEDS updated SO$_2$ (Mt SO$_2$)', color='blue')
-pl.plot(emissions.loc[1750:,'BC']*10, label='CEDS updated BCx10 (Mt C)', color='black')
-pl.plot(emissions.loc[1750:,'OC'], label='CEDS updated OC (Mt C)', color='brown')
-pl.plot(np.arange(1750,2020), emissions_old.loc['1750':'2019','SO2'].values, ls='--', color='blue', label='CMIP6 SO$_2$ (Mt SO$_2$)')
-pl.plot(np.arange(1750,2020), emissions_old.loc['1750':'2019','BC'].values*10, ls='--', color='black', label='CMIP6 BCx10 (Mt C)')
-pl.plot(np.arange(1750,2020), emissions_old.loc['1750':'2019','OC'].values, ls='--', color='brown', label='CMIP6 OC (Mt C)')
-pl.xlim(1750,2019)
-pl.ylim(0,140)
-pl.legend()
-pl.ylabel('Mt/yr')
-pl.title("Aerosol emissions from CMIP6 and updated CEDS (O'Rourke et al. 2020)")
-pl.tight_layout()
-#pl.savefig('../figures/figureS2.png', dpi=300)
-#pl.savefig('../figures/figureS2.pdf')
 
 # %%
 def ari_linear_nobase(x, a0, a1, a2):
@@ -615,7 +488,7 @@ def simple_weight(obs, mod, sigma_D):
 emissions.loc[2005:2015, 'OC']
 
 # %%
-ERFari['CMIP6-constrained'] = np.zeros((270,samples))
+ERFari['CMIP6-constrained'] = np.zeros((273,samples))
 for i in tqdm(range(samples)):
     ts2010 = np.mean(
         ari_linear_nobase(
@@ -653,15 +526,15 @@ for i in tqdm(range(samples)):
     ERFari['CMIP6-constrained'][:,i] = (
         ari_linear_nobase(
             [
-                emissions['SO2'], 
-                emissions['BC'], 
-                emissions['OC']
+                emissions.loc[:2022, 'SO2'], 
+                emissions.loc[:2022, 'BC'], 
+                emissions.loc[:2022, 'OC']
             ], ari_coeffs[i,0], ari_coeffs[i,1], ari_coeffs[i,2]
         ) - ts1750
-    ) / (ts2010 - ts1850) * (ERFari_scale[i])
+    ) / (ts2010 - ts1850) * (ERFari_scale[i]) + dust_forcing[:, i]
 
 # %%
-ERFaci['CMIP6-constrained'] = np.zeros((270,samples))
+ERFaci['CMIP6-constrained'] = np.zeros((273,samples))
 for i in tqdm(range(samples)):
     ts2010 = np.mean(
         aci_log_nobase(
@@ -692,43 +565,43 @@ for i in tqdm(range(samples)):
     ERFaci['CMIP6-constrained'][:,i] = (
         aci_log_nobase(
             [
-                emissions['SO2'],
-                emissions['BC'],
-                emissions['OC']
+                emissions.loc[:2022, 'SO2'],
+                emissions.loc[:2022, 'BC'],
+                emissions.loc[:2022, 'OC']
             ], 1, aci_coeffs[i,0], aci_coeffs[i,1], aci_coeffs[i,2]
         ) - ts1750
     ) / (ts2010-ts1850) * (ERFaci_scale[i])
 
 # %%
 fig, ax = pl.subplots(1,3,figsize=(19/2.54, 9.5/2.54))
-ax[0].fill_between(np.arange(1750,2020), np.percentile(ERFari['CMIP6-constrained'], 5, axis=1), np.percentile(ERFari['CMIP6-constrained'], 95, axis=1), color='0.75', lw=0);
-ax[0].fill_between(np.arange(1750,2020), np.percentile(ERFari['CMIP6-constrained'], 16, axis=1), np.percentile(ERFari['CMIP6-constrained'], 84, axis=1), color='0.5', lw=0);
-ax[0].plot(np.arange(1750,2020), np.percentile(ERFari['CMIP6-constrained'], 50, axis=1), color='k', zorder=10)
-ax[0].plot(np.arange(1750,2020), ERFari['CMIP6-constrained'][:,754], color='cyan', label='Parameter set #754')
-ax[0].plot(np.arange(1750,2020), ERFari['CMIP6-constrained'][:,1076], color='magenta', label='Parameter set #1076')
-ax[0].plot(np.arange(1750,2020), ERFari['CMIP6-constrained'][:,18010], color='lime', label='Parameter set #18010')
+ax[0].fill_between(np.arange(1750,2023), np.percentile(ERFari['CMIP6-constrained'], 5, axis=1), np.percentile(ERFari['CMIP6-constrained'], 95, axis=1), color='0.75', lw=0);
+ax[0].fill_between(np.arange(1750,2023), np.percentile(ERFari['CMIP6-constrained'], 16, axis=1), np.percentile(ERFari['CMIP6-constrained'], 84, axis=1), color='0.5', lw=0);
+ax[0].plot(np.arange(1750,2023), np.percentile(ERFari['CMIP6-constrained'], 50, axis=1), color='k', zorder=10)
+ax[0].plot(np.arange(1750,2023), ERFari['CMIP6-constrained'][:,754], color='cyan', label='Parameter set #754')
+ax[0].plot(np.arange(1750,2023), ERFari['CMIP6-constrained'][:,1076], color='magenta', label='Parameter set #1076')
+ax[0].plot(np.arange(1750,2023), ERFari['CMIP6-constrained'][:,18010], color='lime', label='Parameter set #18010')
 ax[0].legend()
-ax[0].set_xlim(1800,2020)
+ax[0].set_xlim(1800,2022)
 ax[0].set_title('ERFari')
 ax[0].set_ylabel('W m$^{-2}$')
 
-ax[1].fill_between(np.arange(1750,2020), np.percentile(ERFaci['CMIP6-constrained'], 5, axis=1), np.percentile(ERFaci['CMIP6-constrained'], 95, axis=1), color='0.75', lw=0, label='5-95% range');
-ax[1].fill_between(np.arange(1750,2020), np.percentile(ERFaci['CMIP6-constrained'], 16, axis=1), np.percentile(ERFaci['CMIP6-constrained'], 84, axis=1), color='0.5', lw=0, label='16-84% range');
-ax[1].plot(np.arange(1750,2020), np.percentile(ERFaci['CMIP6-constrained'], 50, axis=1), color='k', label='median', zorder=10)
-ax[1].plot(np.arange(1750,2020), ERFaci['CMIP6-constrained'][:,754], color='cyan')
-ax[1].plot(np.arange(1750,2020), ERFaci['CMIP6-constrained'][:,1076], color='magenta')
-ax[1].plot(np.arange(1750,2020), ERFaci['CMIP6-constrained'][:,18010], color='lime')
+ax[1].fill_between(np.arange(1750,2023), np.percentile(ERFaci['CMIP6-constrained'], 5, axis=1), np.percentile(ERFaci['CMIP6-constrained'], 95, axis=1), color='0.75', lw=0, label='5-95% range');
+ax[1].fill_between(np.arange(1750,2023), np.percentile(ERFaci['CMIP6-constrained'], 16, axis=1), np.percentile(ERFaci['CMIP6-constrained'], 84, axis=1), color='0.5', lw=0, label='16-84% range');
+ax[1].plot(np.arange(1750,2023), np.percentile(ERFaci['CMIP6-constrained'], 50, axis=1), color='k', label='median', zorder=10)
+ax[1].plot(np.arange(1750,2023), ERFaci['CMIP6-constrained'][:,754], color='cyan')
+ax[1].plot(np.arange(1750,2023), ERFaci['CMIP6-constrained'][:,1076], color='magenta')
+ax[1].plot(np.arange(1750,2023), ERFaci['CMIP6-constrained'][:,18010], color='lime')
 ax[1].legend()
-ax[1].set_xlim(1800,2020)
+ax[1].set_xlim(1800,2022)
 ax[1].set_title('ERFaci')
 
-ax[2].fill_between(np.arange(1750,2020), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 5, axis=1), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 95, axis=1), color='0.75', lw=0);
-ax[2].fill_between(np.arange(1750,2020), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 16, axis=1), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 84, axis=1), color='0.5', lw=0);
-ax[2].plot(np.arange(1750,2020), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 50, axis=1), color='k', zorder=10)
-ax[2].plot(np.arange(1750,2020), ERFari['CMIP6-constrained'][:,754]+ERFaci['CMIP6-constrained'][:,754], color='cyan', label='Ensemble 754')
-ax[2].plot(np.arange(1750,2020), ERFari['CMIP6-constrained'][:,1076]+ERFaci['CMIP6-constrained'][:,1076], color='magenta', label='Ensemble 1076')
-ax[2].plot(np.arange(1750,2020), ERFari['CMIP6-constrained'][:,18010]+ERFaci['CMIP6-constrained'][:,18010], color='lime', label='Ensemble 18010')
-ax[2].set_xlim(1800,2020)
+ax[2].fill_between(np.arange(1750,2023), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 5, axis=1), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 95, axis=1), color='0.75', lw=0);
+ax[2].fill_between(np.arange(1750,2023), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 16, axis=1), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 84, axis=1), color='0.5', lw=0);
+ax[2].plot(np.arange(1750,2023), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 50, axis=1), color='k', zorder=10)
+ax[2].plot(np.arange(1750,2023), ERFari['CMIP6-constrained'][:,754]+ERFaci['CMIP6-constrained'][:,754], color='cyan', label='Ensemble 754')
+ax[2].plot(np.arange(1750,2023), ERFari['CMIP6-constrained'][:,1076]+ERFaci['CMIP6-constrained'][:,1076], color='magenta', label='Ensemble 1076')
+ax[2].plot(np.arange(1750,2023), ERFari['CMIP6-constrained'][:,18010]+ERFaci['CMIP6-constrained'][:,18010], color='lime', label='Ensemble 18010')
+ax[2].set_xlim(1800,2022)
 ax[2].set_title('Aerosol ERF')
 
 ax[0].set_ylim(-3,0.2)
@@ -744,31 +617,51 @@ fig.tight_layout()
 
 # %%
 in_forcing = baseline_forcing.copy()
-in_forcing.drop(['aerosol-radiation_interactions', 'aerosol-cloud_interactions','total_anthropogenic','total_natural','total'], axis=1, inplace=True)
+in_forcing.drop(
+    [
+        'aerosol-radiation_interactions', 
+        'aerosol-cloud_interactions',
+        'aerosol',
+        'anthro',
+        'nonco2wmghg',
+        'minor',
+        'total'
+    ], axis=1, inplace=True
+)
+in_forcing
 in_forcing = in_forcing * scale_df.loc[0,:]
-in_forcing['solar'] = in_forcing['solar'] + np.linspace(0, trend_solar[0], 270)
-in_forcing['aerosol-radiation_interactions'] = ERFari['CMIP6-constrained'][:270,0]
-in_forcing['aerosol-cloud_interactions'] = ERFaci['CMIP6-constrained'][:270,0]
+in_forcing['solar'] = in_forcing['solar'] + np.linspace(0, trend_solar[0], 273)
+in_forcing['aerosol-radiation_interactions'] = ERFari['CMIP6-constrained'][:273,0]
+in_forcing['aerosol-cloud_interactions'] = ERFaci['CMIP6-constrained'][:273,0]
 in_forcing['total'] = in_forcing.sum(axis=1)
-in_forcing['total']
 
 # %%
-temp['CMIP6-constrained'] = np.zeros((270, samples))
-ohc['CMIP6-constrained'] = np.zeros((270, samples))
-hflux['CMIP6-constrained'] = np.zeros((270, samples))
+temp['CMIP6-constrained'] = np.zeros((273, samples))
+ohc['CMIP6-constrained'] = np.zeros((273, samples))
+hflux['CMIP6-constrained'] = np.zeros((273, samples))
 for i in tqdm(range(samples)):
     in_forcing = baseline_forcing.copy()
-    in_forcing.drop(['aerosol-radiation_interactions', 'aerosol-cloud_interactions','total_anthropogenic','total_natural','total'], axis=1, inplace=True)
+    in_forcing.drop(
+        [
+            'aerosol-radiation_interactions', 
+            'aerosol-cloud_interactions',
+            'aerosol',
+            'anthro',
+            'nonco2wmghg',
+            'minor',
+            'total'
+        ], axis=1, inplace=True
+    )
     in_forcing = in_forcing * scale_df.loc[i,:]
-    in_forcing['solar'] = in_forcing['solar'] + np.linspace(0, trend_solar[i], 270)
-    in_forcing['aerosol-radiation_interactions'] = ERFari['CMIP6-constrained'][:270,i]
-    in_forcing['aerosol-cloud_interactions'] = ERFaci['CMIP6-constrained'][:270,i]
+    in_forcing['solar'] = in_forcing['solar'] + np.linspace(0, trend_solar[i], 273)
+    in_forcing['aerosol-radiation_interactions'] = ERFari['CMIP6-constrained'][:273,i]
+    in_forcing['aerosol-cloud_interactions'] = ERFaci['CMIP6-constrained'][:273,i]
     in_forcing['total'] = in_forcing.sum(axis=1)
     scm = TwoLayerModel(
         extforce=in_forcing['total'],
         exttime=in_forcing.index,
         tbeg=1750,
-        tend=2020,
+        tend=2023,
         q2x=geoff_sample_df.loc[i,'q4x']/2,
         lamg=geoff_sample_df.loc[i,'lamg'],
         t2x=None,
@@ -776,7 +669,7 @@ for i in tqdm(range(samples)):
         cmix=geoff_sample_df.loc[i,'cmix'],
         cdeep=geoff_sample_df.loc[i,'cdeep'],
         gamma_2l=geoff_sample_df.loc[i,'gamma_2l'],
-        outtime=np.arange(1750.5,2020),
+        outtime=np.arange(1750.5,2023),
         dt=1
     )
     out = scm.run()
@@ -785,29 +678,35 @@ for i in tqdm(range(samples)):
     hflux['CMIP6-constrained'][:,i] = out.hflux
 
 # %%
-pl.fill_between(np.arange(1750,2020), np.percentile(temp['CMIP6-constrained'], 5, axis=1), np.percentile(temp['CMIP6-constrained'], 95, axis=1))
-pl.plot(np.arange(1750,2020), np.median(temp['CMIP6-constrained'], axis=1), color='k')
+pl.fill_between(np.arange(1750,2023), np.percentile(temp['CMIP6-constrained'], 5, axis=1), np.percentile(temp['CMIP6-constrained'], 95, axis=1))
+pl.plot(np.arange(1750,2023), np.median(temp['CMIP6-constrained'], axis=1), color='k')
+
+# %% [markdown]
+# # TODO TODO TODO: internal variability indices here have been modified to make them fit; change them back when the new IV script has run
 
 # %%
-ks['temp']['CMIP6-constrained'] = knutti_score(Tobs, temp['CMIP6-constrained'][100:270, :] + intvar[100:270,:samples], sigma_D=0.12)
-ks['ohc']['CMIP6-constrained'] = simple_weight(358, 10*(ohc['CMIP6-constrained'][268,:]-ohc['CMIP6-constrained'][221,:]), sigma_D=37)
+#ks['temp']['CMIP6-constrained'] = knutti_score(Tobs, temp['CMIP6-constrained'][100:273, :] + intvar[100:273,:samples], sigma_D=0.12)
+ks['temp']['CMIP6-constrained'] = knutti_score(Tobs, temp['CMIP6-constrained'][100:273, :] + intvar[97:270,:samples], sigma_D=0.12)
+    # unchanged sigma_D for temperature; slightly unsatisfactory since it's not symmetric
+ks['ohc']['CMIP6-constrained'] = simple_weight(465.3, 10*(ohc['CMIP6-constrained'][268,:]-ohc['CMIP6-constrained'][221,:]), sigma_D=66)
+    # ohc sigma_D range comes from fair-calibrate 1.4.1 which is based on IGCC 2022
 ks['multi']['CMIP6-constrained'] = (ks['temp']['CMIP6-constrained']*ks['ohc']['CMIP6-constrained'])/(np.sum(ks['temp']['CMIP6-constrained']*ks['ohc']['CMIP6-constrained']))
 
 # %%
-print(weighted_percentile(ERFari['CMIP6-constrained'][269,:]+ERFaci['CMIP6-constrained'][269,:], ks['temp']['CMIP6-constrained'][:], [.05,.16,.5,.84,.95]))
-print(weighted_percentile(ERFari['CMIP6-constrained'][269,:]+ERFaci['CMIP6-constrained'][269,:], ks['ohc']['CMIP6-constrained'][:], [.05,.16,.5,.84,.95]))
-print(weighted_percentile(ERFari['CMIP6-constrained'][269,:]+ERFaci['CMIP6-constrained'][269,:], ks['multi']['CMIP6-constrained'][:], [.05,.16,.5,.84,.95]))
+print(weighted_percentile(ERFari['CMIP6-constrained'][272,:]+ERFaci['CMIP6-constrained'][272,:], ks['temp']['CMIP6-constrained'][:], [.05,.16,.5,.84,.95]))
+print(weighted_percentile(ERFari['CMIP6-constrained'][272,:]+ERFaci['CMIP6-constrained'][272,:], ks['ohc']['CMIP6-constrained'][:], [.05,.16,.5,.84,.95]))
+print(weighted_percentile(ERFari['CMIP6-constrained'][272,:]+ERFaci['CMIP6-constrained'][272,:], ks['multi']['CMIP6-constrained'][:], [.05,.16,.5,.84,.95]))
 
 # %%
-os.makedirs('../data_output/results/corrected_aprp/', exist_ok=True)
+os.makedirs('../data_output/results/dust/', exist_ok=True)
 
 # %%
-save_dict_to_hdf5(ERFari, '../data_output/results/corrected_aprp/ERFari.h5')
-save_dict_to_hdf5(ERFaci, '../data_output/results/corrected_aprp/ERFaci.h5')
-save_dict_to_hdf5(temp, '../data_output/results/corrected_aprp/temp.h5')
-save_dict_to_hdf5(ks, '../data_output/results/corrected_aprp/knutti_score.h5')
-save_dict_to_hdf5(ohc, '../data_output/results/corrected_aprp/ohc.h5')
-save_dict_to_hdf5(hflux, '../data_output/results/corrected_aprp/hflux.h5')
+save_dict_to_hdf5(ERFari, '../data_output/results/dust/ERFari.h5')
+save_dict_to_hdf5(ERFaci, '../data_output/results/dust/ERFaci.h5')
+save_dict_to_hdf5(temp, '../data_output/results/dust/temp.h5')
+save_dict_to_hdf5(ks, '../data_output/results/dust/knutti_score.h5')
+save_dict_to_hdf5(ohc, '../data_output/results/dust/ohc.h5')
+save_dict_to_hdf5(hflux, '../data_output/results/dust/hflux.h5')
 
 # %%
 # Throw TCR into the mix
@@ -817,6 +716,9 @@ ecs = geoff_sample_df['q4x'][:samples]/2/(geoff_sample_df[:samples]['lamg'])
 
 # %%
 expts = ['CMIP6-constrained']
+
+# %% [markdown]
+# # TODO TODO TODO change indices in intvar
 
 # %%
 pc = {}
@@ -829,7 +731,7 @@ for expt in tqdm(expts):
         for metric in ['GSAT','OHC','ERFari','ERFaci','ERFaer']:
             pc[expt][constraint][metric] = {}
             for perc in ['5','16','50','84','95']:
-                pc[expt][constraint][metric][perc] = np.zeros(270)
+                pc[expt][constraint][metric][perc] = np.zeros(273)
         (
             pc[expt][constraint]['ECS']['5'],
             pc[expt][constraint]['ECS']['16'],
@@ -846,14 +748,15 @@ for expt in tqdm(expts):
             pc[expt][constraint]['TCR']['84'],
             pc[expt][constraint]['TCR']['95']
         ) = weighted_percentile(tcr, ks[constraint][expt], [.05,.16,.5,.84,.95])
-        for year in range(270):
+        for year in range(273):
             (
                 pc[expt][constraint]['GSAT']['5'][year],
                 pc[expt][constraint]['GSAT']['16'][year],
                 pc[expt][constraint]['GSAT']['50'][year],
                 pc[expt][constraint]['GSAT']['84'][year],
                 pc[expt][constraint]['GSAT']['95'][year] 
-            ) = weighted_percentile(temp[expt][year,:] + intvar[year,:samples], ks[constraint][expt], [.05,.16,.5,.84,.95])
+            # ) = weighted_percentile(temp[expt][year,:] + intvar[year,:samples], ks[constraint][expt], [.05,.16,.5,.84,.95])
+            ) = weighted_percentile(temp[expt][year,:] + intvar[year-3,:samples], ks[constraint][expt], [.05,.16,.5,.84,.95])
             (
                 pc[expt][constraint]['OHC']['5'][year],
                 pc[expt][constraint]['OHC']['16'][year],
@@ -884,7 +787,7 @@ for expt in tqdm(expts):
             ) = weighted_percentile(ERFari[expt][year,:]+ERFaci[expt][year,:], ks[constraint][expt], [.05,.16,.5,.84,.95])
 
 # %%
-save_dict_to_hdf5(pc, '../data_output/results/corrected_aprp/pc.h5')
+save_dict_to_hdf5(pc, '../data_output/results/dust/pc.h5')
 
 # %%
 for constraint in ['temp','ohc','multi']:
@@ -893,8 +796,8 @@ for constraint in ['temp','ohc','multi']:
     for expt in expts:
         print(expt, constraint, 'ECS', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ECS']['5'], pc[expt][constraint]['ECS']['16'], pc[expt][constraint]['ECS']['50'], np.sum(ecs*ks[constraint][expt]), pc[expt][constraint]['ECS']['84'], pc[expt][constraint]['ECS']['95']))
         print(expt, constraint, 'TCR', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['TCR']['5'], pc[expt][constraint]['TCR']['16'], pc[expt][constraint]['TCR']['50'], np.sum(tcr*ks[constraint][expt]), pc[expt][constraint]['TCR']['84'], pc[expt][constraint]['TCR']['95']))
-        print(expt, constraint, 'ERFaer', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ERFaer']['5'][269], pc[expt][constraint]['ERFaer']['16'][269], pc[expt][constraint]['ERFaer']['50'][269], np.sum((ERFari[expt][269] + ERFaci[expt][269])*ks[constraint][expt]), pc[expt][constraint]['ERFaer']['84'][269], pc[expt][constraint]['ERFaer']['95'][269]))
-        print(expt, constraint, 'ERFari', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ERFari']['5'][269], pc[expt][constraint]['ERFari']['16'][269], pc[expt][constraint]['ERFari']['50'][269], np.sum(ERFari[expt][269]*ks[constraint][expt]), pc[expt][constraint]['ERFari']['84'][269], pc[expt][constraint]['ERFari']['95'][269]))
-        print(expt, constraint, 'ERFaci', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ERFaci']['5'][269], pc[expt][constraint]['ERFaci']['16'][269], pc[expt][constraint]['ERFaci']['50'][269], np.sum(ERFaci[expt][269]*ks[constraint][expt]), pc[expt][constraint]['ERFaci']['84'][269], pc[expt][constraint]['ERFaci']['95'][269]))
+        print(expt, constraint, 'ERFaer', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ERFaer']['5'][272], pc[expt][constraint]['ERFaer']['16'][272], pc[expt][constraint]['ERFaer']['50'][272], np.sum((ERFari[expt][272] + ERFaci[expt][272])*ks[constraint][expt]), pc[expt][constraint]['ERFaer']['84'][272], pc[expt][constraint]['ERFaer']['95'][272]))
+        print(expt, constraint, 'ERFari', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ERFari']['5'][272], pc[expt][constraint]['ERFari']['16'][272], pc[expt][constraint]['ERFari']['50'][272], np.sum(ERFari[expt][272]*ks[constraint][expt]), pc[expt][constraint]['ERFari']['84'][272], pc[expt][constraint]['ERFari']['95'][272]))
+        print(expt, constraint, 'ERFaci', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ERFaci']['5'][272], pc[expt][constraint]['ERFaci']['16'][272], pc[expt][constraint]['ERFaci']['50'][272], np.sum(ERFaci[expt][272]*ks[constraint][expt]), pc[expt][constraint]['ERFaci']['84'][272], pc[expt][constraint]['ERFaci']['95'][272]))
 
 # %%

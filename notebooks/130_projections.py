@@ -1511,14 +1511,14 @@ ks['ohc']['MRI-ESM2-0'] = simple_weight(358, 10*(ohc['MRI-ESM2-0'][268,:]-ohc['M
 ks['multi']['MRI-ESM2-0'] = (ks['temp']['MRI-ESM2-0']*ks['ohc']['MRI-ESM2-0'])/(np.sum(ks['temp']['MRI-ESM2-0']*ks['ohc']['MRI-ESM2-0']))
 
 # %%
-os.makedirs('../data_output/results/', exist_ok=True)
+os.makedirs('../data_output/results/original/', exist_ok=True)
 
 # %%
-save_dict_to_hdf5(ERFari, '../data_output/results/ERFari.h5')
-save_dict_to_hdf5(ERFaci, '../data_output/results/ERFaci.h5')
-save_dict_to_hdf5(temp, '../data_output/results/temp.h5')
-save_dict_to_hdf5(ks, '../data_output/results/knutti_score.h5')
-save_dict_to_hdf5(ohc, '../data_output/results/ohc.h5')
-save_dict_to_hdf5(hflux, '../data_output/results/hflux.h5')
+save_dict_to_hdf5(ERFari, '../data_output/results/original/ERFari.h5')
+save_dict_to_hdf5(ERFaci, '../data_output/results/original/ERFaci.h5')
+save_dict_to_hdf5(temp, '../data_output/results/original/temp.h5')
+save_dict_to_hdf5(ks, '../data_output/results/original/knutti_score.h5')
+save_dict_to_hdf5(ohc, '../data_output/results/original/ohc.h5')
+save_dict_to_hdf5(hflux, '../data_output/results/original/hflux.h5')
 
 # %%

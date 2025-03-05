@@ -12,6 +12,9 @@ data_input/rcmip/
 data_input/ceds/
 data_input/input4mips/
 
+# Jasper's dust forcing. Add to a Zenodo repository, it's too big for GitHub
+data_input/Dust_radiative_forcing_timeseries_N1e5.nc
+
 # large output datafiles created by the code and too big for GitHub
 data_output/piControl/
 data_output/results/

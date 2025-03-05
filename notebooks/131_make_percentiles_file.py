@@ -67,12 +67,12 @@ def recursively_load_dict_contents_from_group(h5file, path):
 
 # %%
 # load large datafiles calculated previously
-ERFari = load_dict_from_hdf5('../data_output/results/ERFari.h5')
-ERFaci = load_dict_from_hdf5('../data_output/results/ERFaci.h5')
-temp   = load_dict_from_hdf5('../data_output/results/temp.h5')
-ks     = load_dict_from_hdf5('../data_output/results/knutti_score.h5')
-ohc    = load_dict_from_hdf5('../data_output/results/ohc.h5')
-hflux  = load_dict_from_hdf5('../data_output/results/hflux.h5')
+ERFari = load_dict_from_hdf5('../data_output/results/original/ERFari.h5')
+ERFaci = load_dict_from_hdf5('../data_output/results/original/ERFaci.h5')
+temp   = load_dict_from_hdf5('../data_output/results/original/temp.h5')
+ks     = load_dict_from_hdf5('../data_output/results/original/knutti_score.h5')
+ohc    = load_dict_from_hdf5('../data_output/results/original/ohc.h5')
+hflux  = load_dict_from_hdf5('../data_output/results/original/hflux.h5')
 
 # %%
 pl.rcParams['figure.figsize'] = (12/2.54, 12/2.54)
@@ -223,6 +223,6 @@ for expt in tqdm(expts):
             ) = weighted_percentile(ERFari[expt][year,:]+ERFaci[expt][year,:], ks[constraint][expt], [.05,.16,.5,.84,.95])
 
 # %%
-save_dict_to_hdf5(pc, '../data_output/results/pc.h5')
+save_dict_to_hdf5(pc, '../data_output/results/original/pc.h5')
 
 # %%

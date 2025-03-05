@@ -280,6 +280,9 @@ fig.tight_layout()
 aci_fits
 
 # %%
+ari_fits
+
+# %%
 coeff = {}
 for model in aci_fits:
     coeff[model] = {}
@@ -290,9 +293,9 @@ for model in aci_fits:
         'n2': aci_fits[model][3]
     }
     coeff[model]['ERFari'] = {
-        'SO2': aci_fits[model][0],
-        'BC': aci_fits[model][1],
-        'OC': aci_fits[model][2]
+        'SO2': ari_fits[model][0],
+        'BC': ari_fits[model][1],
+        'OC': ari_fits[model][2]
     }
 
 # %%
