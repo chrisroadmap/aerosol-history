@@ -667,12 +667,8 @@ for i in tqdm(range(samples)):
 pl.fill_between(np.arange(1750,2023), np.percentile(temp['CMIP6-constrained'], 5, axis=1), np.percentile(temp['CMIP6-constrained'], 95, axis=1))
 pl.plot(np.arange(1750,2023), np.median(temp['CMIP6-constrained'], axis=1), color='k')
 
-# %% [markdown]
-# # TODO TODO TODO: internal variability indices here have been modified to make them fit; change them back when the new IV script has run
-
 # %%
-#ks['temp']['CMIP6-constrained'] = knutti_score(Tobs, temp['CMIP6-constrained'][100:273, :] + intvar[100:273,:samples], sigma_D=0.12)
-ks['temp']['CMIP6-constrained'] = knutti_score(Tobs, temp['CMIP6-constrained'][100:273, :] + intvar[97:270,:samples], sigma_D=0.12)
+ks['temp']['CMIP6-constrained'] = knutti_score(Tobs, temp['CMIP6-constrained'][100:273, :] + intvar[100:273,:samples], sigma_D=0.12)
     # unchanged sigma_D for temperature; slightly unsatisfactory since it's not symmetric
 ks['ohc']['CMIP6-constrained'] = simple_weight(465.3, 10*(ohc['CMIP6-constrained'][268,:]-ohc['CMIP6-constrained'][221,:]), sigma_D=66)
     # ohc sigma_D range comes from fair-calibrate 1.4.1 which is based on IGCC 2022
@@ -702,9 +698,6 @@ ecs = geoff_sample_df['q4x'][:samples]/2/(geoff_sample_df[:samples]['lamg'])
 
 # %%
 expts = ['CMIP6-constrained']
-
-# %% [markdown]
-# # TODO TODO TODO change indices in intvar
 
 # %%
 pc = {}
@@ -741,8 +734,7 @@ for expt in tqdm(expts):
                 pc[expt][constraint]['GSAT']['50'][year],
                 pc[expt][constraint]['GSAT']['84'][year],
                 pc[expt][constraint]['GSAT']['95'][year] 
-            # ) = weighted_percentile(temp[expt][year,:] + intvar[year,:samples], ks[constraint][expt], [.05,.16,.5,.84,.95])
-            ) = weighted_percentile(temp[expt][year,:] + intvar[year-3,:samples], ks[constraint][expt], [.05,.16,.5,.84,.95])
+            ) = weighted_percentile(temp[expt][year,:] + intvar[year,:samples], ks[constraint][expt], [.05,.16,.5,.84,.95])
             (
                 pc[expt][constraint]['OHC']['5'][year],
                 pc[expt][constraint]['OHC']['16'][year],

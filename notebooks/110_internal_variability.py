@@ -191,3 +191,5 @@ os.makedirs('../data_output/piControl', exist_ok=True)
 
 # %%
 np.savetxt('../data_output/piControl/internal_variability_piControl.txt', intvar)
+
+# %%

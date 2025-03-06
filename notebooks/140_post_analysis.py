@@ -298,7 +298,7 @@ for expt in expts:
     if expt=='CMIP6-constrained':
         lw=2
         zorder=10
-        axtmp.plot(np.arange(1750.5,2020), np.nansum((temp[expt] + intvar[:,:samples])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], color=colors[expt], zorder=zorder)
+        axtmp.plot(np.arange(1750.5,2020), np.nansum((temp[expt] + intvar[:270,:samples])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], color=colors[expt], zorder=zorder)
         axaer.plot(np.arange(1750.5,2020), np.nansum((ERFari[expt][:270]+ERFaci[expt][:270])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], label=expt, color=colors[expt], zorder=zorder)
         axari.plot(np.arange(1750.5,2020), np.nansum((ERFari[expt][:270])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], label=expt, color=colors[expt], zorder=zorder)
         axaci.plot(np.arange(1750.5,2020), np.nansum((ERFaci[expt][:270])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], label=expt, color=colors[expt], zorder=zorder)
@@ -307,7 +307,7 @@ for expt in expts:
     else:
         lw=1
         zorder=1
-        axtmp.plot(np.arange(1750.5,2020), np.nansum((temp[expt] + intvar[:,:samples])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], color=colors[expt], zorder=zorder)
+        axtmp.plot(np.arange(1750.5,2020), np.nansum((temp[expt] + intvar[:270,:samples])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], color=colors[expt], zorder=zorder)
         axaer.plot(np.arange(1750.5,2020), savgol_filter(np.nansum((ERFari[expt][:270]+ERFaci[expt][:270])*ks['multi'][expt], axis=1), 11, 1), lw=lw, ls=ls[expt], label=expt, color=colors[expt], zorder=zorder)
         axari.plot(np.arange(1750.5,2020), savgol_filter(np.nansum((ERFari[expt][:270])*ks['multi'][expt], axis=1), 11, 1), lw=lw, ls=ls[expt], label=expt, color=colors[expt], zorder=zorder)
         axaci.plot(np.arange(1750.5,2020), savgol_filter(np.nansum((ERFaci[expt][:270])*ks['multi'][expt], axis=1), 11, 1), lw=lw, ls=ls[expt], label=expt, color=colors[expt], zorder=zorder)
