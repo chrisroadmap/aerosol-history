@@ -201,15 +201,15 @@ ls = {
 
 # %%
 # load large datafiles calculated previously
-ERFari = load_dict_from_hdf5('../data_output/results/ERFari.h5')
-ERFaci = load_dict_from_hdf5('../data_output/results/ERFaci.h5')
-temp   = load_dict_from_hdf5('../data_output/results/temp.h5')
-ks     = load_dict_from_hdf5('../data_output/results/knutti_score.h5')
-ohc    = load_dict_from_hdf5('../data_output/results/ohc.h5')
-hflux  = load_dict_from_hdf5('../data_output/results/hflux.h5')
+ERFari = load_dict_from_hdf5('../data_output/results/original/ERFari.h5')
+ERFaci = load_dict_from_hdf5('../data_output/results/original/ERFaci.h5')
+temp   = load_dict_from_hdf5('../data_output/results/original/temp.h5')
+ks     = load_dict_from_hdf5('../data_output/results/original/knutti_score.h5')
+ohc    = load_dict_from_hdf5('../data_output/results/original/ohc.h5')
+hflux  = load_dict_from_hdf5('../data_output/results/original/hflux.h5')
 
 # %%
-pc = load_dict_from_hdf5('../data_output/results/pc.h5')
+pc = load_dict_from_hdf5('../data_output/results/original/pc.h5')
 
 # %%
 intvar = np.loadtxt('../data_output/piControl/internal_variability_piControl.txt')
