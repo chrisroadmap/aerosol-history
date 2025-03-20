@@ -681,13 +681,10 @@ for i in tqdm(range(samples)):
 pl.fill_between(np.arange(1750,2023), np.percentile(temp['CMIP6-constrained'], 5, axis=1), np.percentile(temp['CMIP6-constrained'], 95, axis=1))
 pl.plot(np.arange(1750,2023), np.median(temp['CMIP6-constrained'], axis=1), color='k')
 
-# %% [markdown]
-# # TODO TODO TODO: internal variability indices here have been modified to make them fit; change them back when the new IV script has run
-
 # %%
 ks['temp']['CMIP6-constrained'] = knutti_score(Tobs, temp['CMIP6-constrained'][100:273, :] + intvar[100:273,:samples], sigma_D=0.12)
     # unchanged sigma_D for temperature; slightly unsatisfactory since it's not symmetric
-ks['ohc']['CMIP6-constrained'] = simple_weight(465.3, 10*(ohc['CMIP6-constrained'][268,:]-ohc['CMIP6-constrained'][221,:]), sigma_D=66)
+ks['ohc']['CMIP6-constrained'] = simple_weight(465.3, 10*(ohc['CMIP6-constrained'][270,:]-ohc['CMIP6-constrained'][221,:]), sigma_D=66)
     # ohc sigma_D range comes from fair-calibrate 1.4.1 which is based on IGCC 2022
 ks['multi']['CMIP6-constrained'] = (ks['temp']['CMIP6-constrained']*ks['ohc']['CMIP6-constrained'])/(np.sum(ks['temp']['CMIP6-constrained']*ks['ohc']['CMIP6-constrained']))
 
@@ -783,16 +780,5 @@ for expt in tqdm(expts):
 
 # %%
 save_dict_to_hdf5(pc, '../data_output/results/dust/pc.h5')
-
-# %%
-for constraint in ['temp','ohc','multi']:
-    print(constraint)
-    print('---------')
-    for expt in expts:
-        print(expt, constraint, 'ECS', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ECS']['5'], pc[expt][constraint]['ECS']['16'], pc[expt][constraint]['ECS']['50'], np.sum(ecs*ks[constraint][expt]), pc[expt][constraint]['ECS']['84'], pc[expt][constraint]['ECS']['95']))
-        print(expt, constraint, 'TCR', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['TCR']['5'], pc[expt][constraint]['TCR']['16'], pc[expt][constraint]['TCR']['50'], np.sum(tcr*ks[constraint][expt]), pc[expt][constraint]['TCR']['84'], pc[expt][constraint]['TCR']['95']))
-        print(expt, constraint, 'ERFaer', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ERFaer']['5'][272], pc[expt][constraint]['ERFaer']['16'][272], pc[expt][constraint]['ERFaer']['50'][272], np.sum((ERFari[expt][272] + ERFaci[expt][272])*ks[constraint][expt]), pc[expt][constraint]['ERFaer']['84'][272], pc[expt][constraint]['ERFaer']['95'][272]))
-        print(expt, constraint, 'ERFari', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ERFari']['5'][272], pc[expt][constraint]['ERFari']['16'][272], pc[expt][constraint]['ERFari']['50'][272], np.sum(ERFari[expt][272]*ks[constraint][expt]), pc[expt][constraint]['ERFari']['84'][272], pc[expt][constraint]['ERFari']['95'][272]))
-        print(expt, constraint, 'ERFaci', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ERFaci']['5'][272], pc[expt][constraint]['ERFaci']['16'][272], pc[expt][constraint]['ERFaci']['50'][272], np.sum(ERFaci[expt][272]*ks[constraint][expt]), pc[expt][constraint]['ERFaci']['84'][272], pc[expt][constraint]['ERFaci']['95'][272]))
 
 # %%
