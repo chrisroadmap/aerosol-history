@@ -125,7 +125,7 @@ fig, ax = pl.subplots()
 for i, model in enumerate(accepted_models):
     y = autocorr(piControl[model]['tas_driftcorrected'])
     ax.plot(y / float(y.max()))
-ax.set_xlim(0,270)
+ax.set_xlim(0,276)
 
 # %%
 for i, model in enumerate(accepted_models):
@@ -134,20 +134,20 @@ for i, model in enumerate(accepted_models):
 # %%
 acov  = {}
 for model in accepted_models:
-    acov[model] = np.zeros(270)
+    acov[model] = np.zeros(276)
     nyears = len(piControl[model]['tas_driftcorrected'])
-    if nyears<270:
+    if nyears<276:
         acov[model][:nyears] = acovf(piControl[model]['tas_driftcorrected'])
     else:
-        acov[model] = acovf(piControl[model]['tas_driftcorrected'])[:270]
+        acov[model] = acovf(piControl[model]['tas_driftcorrected'])[:276]
 
 # %%
 acm = {}
 for model in accepted_models:
-    for i in range(1, 270):
-        acm[model] = np.zeros((270, 270))
-        acm[model] = acm[model] + np.diag(acov[model][i]*np.ones(270-i), i) + np.diag(acov[model][i]*np.ones(270-i), -i)
-    acm[model] = acm[model] + np.diag(acov[model][0]*np.ones(270))
+    for i in range(1, 276):
+        acm[model] = np.zeros((276, 276))
+        acm[model] = acm[model] + np.diag(acov[model][i]*np.ones(276-i), i) + np.diag(acov[model][i]*np.ones(276-i), -i)
+    acm[model] = acm[model] + np.diag(acov[model][0]*np.ones(276))
 
 # %%
 acov = {}
@@ -156,10 +156,10 @@ nyears = {}
 for model in tqdm(accepted_models):
     ac = acovf(piControl[model]['tas_driftcorrected'])
     nyears[model] = len(piControl[model]['tas_driftcorrected'])
-    if nyears[model]<273:
-        acov[model] = np.zeros(273)
+    if nyears[model]<276:
+        acov[model] = np.zeros(276)
         acov[model][:nyears[model]] = ac
-        nyears[model] = 273
+        nyears[model] = 276
     else:
         acov[model] = ac
     acm[model] = np.zeros((nyears[model], nyears[model]))
@@ -173,18 +173,18 @@ x = st.multivariate_normal.rvs(cov=acm['CNRM-ESM2-1'], random_state=10)
 y = st.multivariate_normal.rvs(cov=acm['CNRM-ESM2-1'], random_state=11)
 z = st.multivariate_normal.rvs(cov=acm['CNRM-ESM2-1'], random_state=12)
 
-pl.plot(x[:273])
-pl.plot(y[:273])
-pl.plot(z[:273])
+pl.plot(x[:276])
+pl.plot(y[:276])
+pl.plot(z[:276])
 
 
 # %%
 np.random.seed(seed=360185)
 samples = 100000
 model_choices = np.random.randint(0, high=len(accepted_models), size=samples)
-intvar = np.zeros((273, samples))
+intvar = np.zeros((276, samples))
 for i in tqdm(range(samples)):
-    intvar[:, i] = st.multivariate_normal.rvs(cov=acm[accepted_models[model_choices[i]]], random_state=98426+i*9)[:273]
+    intvar[:, i] = st.multivariate_normal.rvs(cov=acm[accepted_models[model_choices[i]]], random_state=98426+i*9)[:276]
 
 # %%
 os.makedirs('../data_output/piControl', exist_ok=True)

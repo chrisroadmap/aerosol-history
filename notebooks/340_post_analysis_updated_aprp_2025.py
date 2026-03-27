@@ -72,12 +72,12 @@ def recursively_load_dict_contents_from_group(h5file, path):
 
 # %%
 # load large datafiles calculated previously
-ERFari = load_dict_from_hdf5('../data_output/results/igcc_2022/ERFari.h5')
-ERFaci = load_dict_from_hdf5('../data_output/results/igcc_2022/ERFaci.h5')
-temp   = load_dict_from_hdf5('../data_output/results/igcc_2022/temp.h5')
-ks     = load_dict_from_hdf5('../data_output/results/igcc_2022/knutti_score.h5')
-ohc    = load_dict_from_hdf5('../data_output/results/igcc_2022/ohc.h5')
-hflux  = load_dict_from_hdf5('../data_output/results/igcc_2022/hflux.h5')
+ERFari = load_dict_from_hdf5('../data_output/results/igcc_2025/ERFari.h5')
+ERFaci = load_dict_from_hdf5('../data_output/results/igcc_2025/ERFaci.h5')
+temp   = load_dict_from_hdf5('../data_output/results/igcc_2025/temp.h5')
+ks     = load_dict_from_hdf5('../data_output/results/igcc_2025/knutti_score.h5')
+ohc    = load_dict_from_hdf5('../data_output/results/igcc_2025/ohc.h5')
+hflux  = load_dict_from_hdf5('../data_output/results/igcc_2025/hflux.h5')
 
 # %%
 samples = 100000
@@ -119,7 +119,7 @@ for expt in tqdm(expts):
         for metric in ['GSAT','OHC','ERFari','ERFaci','ERFaer']:
             pc[expt][constraint][metric] = {}
             for perc in ['5','16','50','84','95']:
-                pc[expt][constraint][metric][perc] = np.zeros(273)
+                pc[expt][constraint][metric][perc] = np.zeros(276)
         (
             pc[expt][constraint]['ECS']['5'],
             pc[expt][constraint]['ECS']['16'],
@@ -136,7 +136,7 @@ for expt in tqdm(expts):
             pc[expt][constraint]['TCR']['84'],
             pc[expt][constraint]['TCR']['95']
         ) = weighted_percentile(tcr, ks[constraint][expt], [.05,.16,.5,.84,.95])
-        for year in range(273):
+        for year in range(276):
             (
                 pc[expt][constraint]['GSAT']['5'][year],
                 pc[expt][constraint]['GSAT']['16'][year],
@@ -180,9 +180,9 @@ for constraint in ['temp','ohc','multi']:
     for expt in expts:
         print(expt, constraint, 'ECS', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ECS']['5'], pc[expt][constraint]['ECS']['16'], pc[expt][constraint]['ECS']['50'], np.sum(ecs*ks[constraint][expt]), pc[expt][constraint]['ECS']['84'], pc[expt][constraint]['ECS']['95']))
         print(expt, constraint, 'TCR', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['TCR']['5'], pc[expt][constraint]['TCR']['16'], pc[expt][constraint]['TCR']['50'], np.sum(tcr*ks[constraint][expt]), pc[expt][constraint]['TCR']['84'], pc[expt][constraint]['TCR']['95']))
-        print(expt, constraint, 'ERFaer2022', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ERFaer']['5'][272], pc[expt][constraint]['ERFaer']['16'][272], pc[expt][constraint]['ERFaer']['50'][272], np.sum((ERFari[expt][272] + ERFaci[expt][272])*ks[constraint][expt]), pc[expt][constraint]['ERFaer']['84'][272], pc[expt][constraint]['ERFaer']['95'][272]))
-        print(expt, constraint, 'ERFari2022', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ERFari']['5'][272], pc[expt][constraint]['ERFari']['16'][272], pc[expt][constraint]['ERFari']['50'][272], np.sum(ERFari[expt][272]*ks[constraint][expt]), pc[expt][constraint]['ERFari']['84'][272], pc[expt][constraint]['ERFari']['95'][272]))
-        print(expt, constraint, 'ERFaci2022', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ERFaci']['5'][272], pc[expt][constraint]['ERFaci']['16'][272], pc[expt][constraint]['ERFaci']['50'][272], np.sum(ERFaci[expt][272]*ks[constraint][expt]), pc[expt][constraint]['ERFaci']['84'][272], pc[expt][constraint]['ERFaci']['95'][272]))
+        print(expt, constraint, 'ERFaer2025', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ERFaer']['5'][275], pc[expt][constraint]['ERFaer']['16'][275], pc[expt][constraint]['ERFaer']['50'][275], np.sum((ERFari[expt][275] + ERFaci[expt][272])*ks[constraint][expt]), pc[expt][constraint]['ERFaer']['84'][275], pc[expt][constraint]['ERFaer']['95'][275]))
+        print(expt, constraint, 'ERFari2025', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ERFari']['5'][275], pc[expt][constraint]['ERFari']['16'][275], pc[expt][constraint]['ERFari']['50'][275], np.sum(ERFari[expt][275]*ks[constraint][expt]), pc[expt][constraint]['ERFari']['84'][275], pc[expt][constraint]['ERFari']['95'][275]))
+        print(expt, constraint, 'ERFaci2025', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ERFaci']['5'][275], pc[expt][constraint]['ERFaci']['16'][275], pc[expt][constraint]['ERFaci']['50'][275], np.sum(ERFaci[expt][275]*ks[constraint][expt]), pc[expt][constraint]['ERFaci']['84'][275], pc[expt][constraint]['ERFaci']['95'][275]))
         print(expt, constraint, 'ERFaer2019', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ERFaer']['5'][269], pc[expt][constraint]['ERFaer']['16'][269], pc[expt][constraint]['ERFaer']['50'][269], np.sum((ERFari[expt][269] + ERFaci[expt][269])*ks[constraint][expt]), pc[expt][constraint]['ERFaer']['84'][269], pc[expt][constraint]['ERFaer']['95'][269]))
         print(expt, constraint, 'ERFari2019', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ERFari']['5'][269], pc[expt][constraint]['ERFari']['16'][269], pc[expt][constraint]['ERFari']['50'][269], np.sum(ERFari[expt][269]*ks[constraint][expt]), pc[expt][constraint]['ERFari']['84'][269], pc[expt][constraint]['ERFari']['95'][269]))
         print(expt, constraint, 'ERFaci2019', '%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f' % (pc[expt][constraint]['ERFaci']['5'][269], pc[expt][constraint]['ERFaci']['16'][269], pc[expt][constraint]['ERFaci']['50'][269], np.sum(ERFaci[expt][269]*ks[constraint][expt]), pc[expt][constraint]['ERFaci']['84'][269], pc[expt][constraint]['ERFaci']['95'][269]))
@@ -240,19 +240,19 @@ pl.rcParams['figure.dpi'] = 96
 # %%
 fig, ax = pl.subplots()
 for expt in expts:
-    ax.plot(np.arange(1750.5,2023), 10*np.nansum((ohc[expt]-ohc[expt][221,:])*ks['multi'][expt], axis=1), color=colors[expt], label=expt)
+    ax.plot(np.arange(1750.5,2026), 10*np.nansum((ohc[expt]-ohc[expt][221,:])*ks['multi'][expt], axis=1), color=colors[expt], label=expt)
 ax.set_title('Best estimate aerosol forcing')
 ax.set_ylabel('Ocean heat uptake relative to 1971, ZJ')
-ax.plot(np.arange(1971.5,2021), (OHCobs-OHCobs[0]), color=colors['observations'], label='obs., IGCC 2022')
-ax.set_xlim(1971,2021)
-ax.set_ylim(-50,500)
+ax.plot(np.arange(1971.5,2021), (OHCobs-OHCobs[0]), color=colors['observations'], label='obs., IGCC 2025')
+ax.set_xlim(1971,2026)
+ax.set_ylim(-50,600)
 ax.legend()
 
 # %%
 # Temperature (GMST) observations: IGCC 2022
-tempobs = pd.read_csv('../data_input/IGCC2022_annual_averages.csv')['gmst'].values
+tempobs = pd.read_csv('../data_input/IGCC2024_annual_averages.csv')['gmst'].values
 blratio = 1
-years  = np.arange(1850.5, 2023)
+years  = np.arange(1850.5, 2025)
 Tobs = blratio * tempobs
 
 # %%
@@ -266,36 +266,36 @@ axaci = fig.add_subplot(gs[0,2:4])
 axaer = fig.add_subplot(gs[1,0:4])
 
 expt='CMIP6-constrained'
-axtmp.fill_between(np.arange(1750.5,2023), pc[expt]['multi']['GSAT']['5'], pc[expt]['multi']['GSAT']['95'], color=colors[expt], alpha=0.3, lw=0)
-axaer.fill_between(np.arange(1750.5,2023), pc[expt]['multi']['ERFaer']['5'], pc[expt]['multi']['ERFaer']['95'], color=colors[expt], alpha=0.3, lw=0, label='CMIP6-constrained 5-95% range')
-axari.fill_between(np.arange(1750.5,2023), pc[expt]['multi']['ERFari']['5'], pc[expt]['multi']['ERFari']['95'], color=colors[expt], alpha=0.3, lw=0)
-axaci.fill_between(np.arange(1750.5,2023), pc[expt]['multi']['ERFaci']['5'], pc[expt]['multi']['ERFaci']['95'], color=colors[expt], alpha=0.3, lw=0)
-axohc.fill_between(np.arange(1750.5,2023), 10*(pc[expt]['multi']['OHC']['5']-pc[expt]['multi']['OHC']['5'][221]), 10*(pc[expt]['multi']['OHC']['95']-pc[expt]['multi']['OHC']['95'][221]), color=colors[expt], alpha=0.3, lw=0)
+axtmp.fill_between(np.arange(1750.5,2026), pc[expt]['multi']['GSAT']['5'], pc[expt]['multi']['GSAT']['95'], color=colors[expt], alpha=0.3, lw=0)
+axaer.fill_between(np.arange(1750.5,2026), pc[expt]['multi']['ERFaer']['5'], pc[expt]['multi']['ERFaer']['95'], color=colors[expt], alpha=0.3, lw=0, label='CMIP6-constrained 5-95% range')
+axari.fill_between(np.arange(1750.5,2026), pc[expt]['multi']['ERFari']['5'], pc[expt]['multi']['ERFari']['95'], color=colors[expt], alpha=0.3, lw=0)
+axaci.fill_between(np.arange(1750.5,2026), pc[expt]['multi']['ERFaci']['5'], pc[expt]['multi']['ERFaci']['95'], color=colors[expt], alpha=0.3, lw=0)
+axohc.fill_between(np.arange(1750.5,2026), 10*(pc[expt]['multi']['OHC']['5']-pc[expt]['multi']['OHC']['5'][221]), 10*(pc[expt]['multi']['OHC']['95']-pc[expt]['multi']['OHC']['95'][221]), color=colors[expt], alpha=0.3, lw=0)
 
 for expt in expts:
     if expt=='CMIP6-constrained':
         lw=2
         zorder=10
-        axtmp.plot(np.arange(1750.5,2023), np.nansum((temp[expt] + intvar[:273,:samples])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], color=colors[expt], zorder=zorder)
-        axaer.plot(np.arange(1750.5,2023), np.nansum((ERFari[expt][:273]+ERFaci[expt][:273])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], label=expt, color=colors[expt], zorder=zorder)
-        axari.plot(np.arange(1750.5,2023), np.nansum((ERFari[expt][:273])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], label=expt, color=colors[expt], zorder=zorder)
-        axaci.plot(np.arange(1750.5,2023), np.nansum((ERFaci[expt][:273])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], label=expt, color=colors[expt], zorder=zorder)
-        axohc.plot(np.arange(1750.5,2023), 10*np.nansum((ohc[expt]-ohc[expt][221,:])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], color=colors[expt], zorder=zorder)
+        axtmp.plot(np.arange(1750.5,2026), np.nansum((temp[expt] + intvar[:276,:samples])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], color=colors[expt], zorder=zorder)
+        axaer.plot(np.arange(1750.5,2026), np.nansum((ERFari[expt][:276]+ERFaci[expt][:276])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], label=expt, color=colors[expt], zorder=zorder)
+        axari.plot(np.arange(1750.5,2026), np.nansum((ERFari[expt][:276])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], label=expt, color=colors[expt], zorder=zorder)
+        axaci.plot(np.arange(1750.5,2026), np.nansum((ERFaci[expt][:276])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], label=expt, color=colors[expt], zorder=zorder)
+        axohc.plot(np.arange(1750.5,2026), 10*np.nansum((ohc[expt]-ohc[expt][221,:])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], color=colors[expt], zorder=zorder)
 
     else:
         lw=1
         zorder=1
-        axtmp.plot(np.arange(1750.5,2023), np.nansum((temp[expt] + intvar[:273,:samples])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], color=colors[expt], zorder=zorder)
-        axaer.plot(np.arange(1750.5,2023), savgol_filter(np.nansum((ERFari[expt][:273]+ERFaci[expt][:273])*ks['multi'][expt], axis=1), 11, 1), lw=lw, ls=ls[expt], label=expt, color=colors[expt], zorder=zorder)
-        axari.plot(np.arange(1750.5,2023), savgol_filter(np.nansum((ERFari[expt][:273])*ks['multi'][expt], axis=1), 11, 1), lw=lw, ls=ls[expt], label=expt, color=colors[expt], zorder=zorder)
-        axaci.plot(np.arange(1750.5,2023), savgol_filter(np.nansum((ERFaci[expt][:273])*ks['multi'][expt], axis=1), 11, 1), lw=lw, ls=ls[expt], label=expt, color=colors[expt], zorder=zorder)
-        axohc.plot(np.arange(1750.5,2023), 10*np.nansum((ohc[expt]-ohc[expt][221,:])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], color=colors[expt], zorder=zorder)
+        axtmp.plot(np.arange(1750.5,2026), np.nansum((temp[expt] + intvar[:276,:samples])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], color=colors[expt], zorder=zorder)
+        axaer.plot(np.arange(1750.5,2026), savgol_filter(np.nansum((ERFari[expt][:276]+ERFaci[expt][:276])*ks['multi'][expt], axis=1), 11, 1), lw=lw, ls=ls[expt], label=expt, color=colors[expt], zorder=zorder)
+        axari.plot(np.arange(1750.5,2026), savgol_filter(np.nansum((ERFari[expt][:276])*ks['multi'][expt], axis=1), 11, 1), lw=lw, ls=ls[expt], label=expt, color=colors[expt], zorder=zorder)
+        axaci.plot(np.arange(1750.5,2026), savgol_filter(np.nansum((ERFaci[expt][:276])*ks['multi'][expt], axis=1), 11, 1), lw=lw, ls=ls[expt], label=expt, color=colors[expt], zorder=zorder)
+        axohc.plot(np.arange(1750.5,2026), 10*np.nansum((ohc[expt]-ohc[expt][221,:])*ks['multi'][expt], axis=1), lw=lw, ls=ls[expt], color=colors[expt], zorder=zorder)
 
 axtmp.plot(years, Tobs, color=colors['observations'], label='Reconstructed GSAT', lw=1)
 axohc.plot(np.arange(1971.5,2021), (OHCobs-OHCobs[0]), color=colors['observations'], lw=1, label='Total Earth energy uptake\n(GCOS)')
 axtmp.legend(frameon=False)
 axohc.legend(frameon=False, loc='upper left')
-axtmp.set_xlim(1750,2023)
+axtmp.set_xlim(1750,2026)
 axtmp.set_ylim(-0.5,1.7)
 axtmp.set_ylabel('anomaly since 1850-1900 (K)');
 axtmp.set_title('(d) Temperature')
@@ -304,25 +304,44 @@ axohc.axhline(0, ls=':', color='k')
 axohc.set_ylabel('anomaly since 1971 (ZJ)')
 axohc.set_title('(e) Earth energy uptake')
 axohc.set_ylim(-50,500)
-axohc.set_xlim(1960,2023)
-axaer.set_xlim(1750,2023)
+axohc.set_xlim(1960,2026)
+axaer.set_xlim(1750,2026)
 axaer.set_ylim(-2.0,0.1)
 axaer.set_ylabel('W m$^{-2}$');
 axaer.set_title('(c) Total aerosol ERF')
 axaer.axhline(0, ls=':', color='k')
 axaer.legend(fontsize=8, frameon=False, ncol=2);
-axari.set_xlim(1750,2023)
+axari.set_xlim(1750,2026)
 axari.set_ylim(-1.4,0.15)
 axari.set_ylabel('W m$^{-2}$');
 axari.set_title('(a) ERFari')
 axari.axhline(0, ls=':', color='k')
-axaci.set_xlim(1750,2023)
+axaci.set_xlim(1750,2026)
 axaci.set_ylim(-1.4,0.15)
 axaci.set_ylabel('W m$^{-2}$');
 axaci.set_title('(b) ERFaci')
 axaci.axhline(0, ls=':', color='k')
 fig.tight_layout()
-pl.savefig('../figures/figure6_igcc2022.png', dpi=300)
-pl.savefig('../figures/figure6_igcc2022.pdf')
+pl.savefig('../figures/figure6_igcc2025.png', dpi=300)
+pl.savefig('../figures/figure6_igcc2025.pdf')
+
+# %%
+df_out = pd.DataFrame(
+    np.array(
+        [
+            pc[expt]['multi']['ERFaer']['5'],
+            pc[expt]['multi']['ERFaer']['16'],
+            pc[expt]['multi']['ERFaer']['50'],
+            pc[expt]['multi']['ERFaer']['84'],
+            pc[expt]['multi']['ERFaer']['95'],
+            np.nansum((ERFari[expt][:276]+ERFaci[expt][:276])*ks['multi'][expt], axis=1),
+        ]
+    ).T,
+    index=np.arange(1750.5, 2026),
+    columns=["p05", "p16", "p50", "p84", "p95", "weighted_mean"]
+)
+
+# %%
+df_out.to_csv("../data_output/aerosol_forcing_2025.csv")
 
 # %%

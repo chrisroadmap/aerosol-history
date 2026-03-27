@@ -13,7 +13,7 @@
 # ---
 
 # %% [markdown]
-# # Historical projections with the new aerosol coefficients and emissions and constraints updated to 2022
+# # Historical projections with the new aerosol coefficients and emissions and constraints updated to 2025
 
 # %%
 # todo: most of these imports are redundant!
@@ -118,7 +118,7 @@ pl.rcParams['figure.dpi'] = 96
 # the citation is https://www.earth-syst-sci-data-discuss.net/essd-2019-255/
 
 # %%
-df_eei = pd.read_csv('../data_input/IGCC2022_earth_energy_imbalance.csv', index_col=0)
+df_eei = pd.read_csv('../data_input/IGCC2025_earth_energy_imbalance.csv', index_col=0)
 OHCobs = (df_eei.loc[:2020.5, 'Total'] - df_eei.loc[1971.5, 'Total']).values
 print(OHCobs[-1])
 #OHCobs_u = np.sqrt(ohctopu**2 + ohcbotu**2 + atmoshu**2 + cryoshu**2 + landhcu**2)
@@ -126,10 +126,10 @@ print(OHCobs[-1])
 #pl.plot(np.arange(1960.5,2019), OHCobs)
 
 # %% [markdown]
-# ## Non-aerosol forcing is based on IGCC 2022
+# ## Non-aerosol forcing is based on IGCC 2025 preliminary version
 
 # %%
-ssp245_allforcing = pd.read_csv('../data_input/IGCC2022_ERF_best_aggregates_1750-2022.csv')
+ssp245_allforcing = pd.read_csv('../data_input/IGCC2025_ERF_best_aggregates_1750-2025.csv')
 baseline_forcing = ssp245_allforcing[:].copy()
 
 baseline_forcing.drop(
@@ -145,13 +145,13 @@ baseline_forcing
 baseline_forcing.index
 
 # %%
-# Temperature (GMST) observations: IGCC 2022
-temp = pd.read_csv('../data_input/IGCC2022_annual_averages.csv')['gmst'].values
+# Temperature (GMST) observations: IGCC 2024
+temp = pd.read_csv('../data_input/IGCC2024_annual_averages.csv')['gmst'].values
 
 # %%
 # GSAT/GMST ratio. Following IPCC we assume this is 1.
 blratio = 1
-years  = np.arange(1850.5, 2023)
+years  = np.arange(1850.5, 2025)
 Tobs = blratio * temp
 pl.plot(years, Tobs)
 #pl.plot(np.arange(1750,1901), best_land)
@@ -329,10 +329,10 @@ pl.hist(scale[:,7])
 trend_solar = st.norm.rvs(size=samples, loc=0, scale=0.1/zscore, random_state=138294)
 
 # %% [markdown]
-# ## Get SLCFs from IGCC 2022
+# ## Get SLCFs from IGCC 2025
 
 # %%
-emissions_ceds_update = pd.read_csv('../data_input/IGCC2024_slcf_emissions_1750-2024.csv', index_col=0)
+emissions_ceds_update = pd.read_csv('../data_input/IGCC2025_slcf_emissions_1750-2025.csv', index_col=0)
 emissions_ceds_update
 
 # %%
@@ -474,7 +474,7 @@ def simple_weight(obs, mod, sigma_D):
 emissions.loc[2005:2015, 'OC']
 
 # %%
-ERFari['CMIP6-constrained'] = np.zeros((273,samples))
+ERFari['CMIP6-constrained'] = np.zeros((276,samples))
 for i in tqdm(range(samples)):
     ts2010 = np.mean(
         ari_linear_nobase(
@@ -512,15 +512,15 @@ for i in tqdm(range(samples)):
     ERFari['CMIP6-constrained'][:,i] = (
         ari_linear_nobase(
             [
-                emissions.loc[:2022, 'SO2'], 
-                emissions.loc[:2022, 'BC'], 
-                emissions.loc[:2022, 'OC']
+                emissions.loc[:2026, 'SO2'], 
+                emissions.loc[:2026, 'BC'], 
+                emissions.loc[:2026, 'OC']
             ], ari_coeffs[i,0], ari_coeffs[i,1], ari_coeffs[i,2]
         ) - ts1750
     ) / (ts2010 - ts1850) * (ERFari_scale[i])
 
 # %%
-ERFaci['CMIP6-constrained'] = np.zeros((273,samples))
+ERFaci['CMIP6-constrained'] = np.zeros((276,samples))
 for i in tqdm(range(samples)):
     ts2010 = np.mean(
         aci_log_nobase(
@@ -551,43 +551,43 @@ for i in tqdm(range(samples)):
     ERFaci['CMIP6-constrained'][:,i] = (
         aci_log_nobase(
             [
-                emissions.loc[:2022, 'SO2'],
-                emissions.loc[:2022, 'BC'],
-                emissions.loc[:2022, 'OC']
+                emissions.loc[:2025, 'SO2'],
+                emissions.loc[:2025, 'BC'],
+                emissions.loc[:2025, 'OC']
             ], 1, aci_coeffs[i,0], aci_coeffs[i,1], aci_coeffs[i,2]
         ) - ts1750
     ) / (ts2010-ts1850) * (ERFaci_scale[i])
 
 # %%
 fig, ax = pl.subplots(1,3,figsize=(19/2.54, 9.5/2.54))
-ax[0].fill_between(np.arange(1750,2023), np.percentile(ERFari['CMIP6-constrained'], 5, axis=1), np.percentile(ERFari['CMIP6-constrained'], 95, axis=1), color='0.75', lw=0);
-ax[0].fill_between(np.arange(1750,2023), np.percentile(ERFari['CMIP6-constrained'], 16, axis=1), np.percentile(ERFari['CMIP6-constrained'], 84, axis=1), color='0.5', lw=0);
-ax[0].plot(np.arange(1750,2023), np.percentile(ERFari['CMIP6-constrained'], 50, axis=1), color='k', zorder=10)
-ax[0].plot(np.arange(1750,2023), ERFari['CMIP6-constrained'][:,754], color='cyan', label='Parameter set #754')
-ax[0].plot(np.arange(1750,2023), ERFari['CMIP6-constrained'][:,1076], color='magenta', label='Parameter set #1076')
-ax[0].plot(np.arange(1750,2023), ERFari['CMIP6-constrained'][:,18010], color='lime', label='Parameter set #18010')
+ax[0].fill_between(np.arange(1750,2026), np.percentile(ERFari['CMIP6-constrained'], 5, axis=1), np.percentile(ERFari['CMIP6-constrained'], 95, axis=1), color='0.75', lw=0);
+ax[0].fill_between(np.arange(1750,2026), np.percentile(ERFari['CMIP6-constrained'], 16, axis=1), np.percentile(ERFari['CMIP6-constrained'], 84, axis=1), color='0.5', lw=0);
+ax[0].plot(np.arange(1750,2026), np.percentile(ERFari['CMIP6-constrained'], 50, axis=1), color='k', zorder=10)
+ax[0].plot(np.arange(1750,2026), ERFari['CMIP6-constrained'][:,754], color='cyan', label='Parameter set #754')
+ax[0].plot(np.arange(1750,2026), ERFari['CMIP6-constrained'][:,1076], color='magenta', label='Parameter set #1076')
+ax[0].plot(np.arange(1750,2026), ERFari['CMIP6-constrained'][:,18010], color='lime', label='Parameter set #18010')
 ax[0].legend()
-ax[0].set_xlim(1800,2022)
+ax[0].set_xlim(1800,2025)
 ax[0].set_title('ERFari')
 ax[0].set_ylabel('W m$^{-2}$')
 
-ax[1].fill_between(np.arange(1750,2023), np.percentile(ERFaci['CMIP6-constrained'], 5, axis=1), np.percentile(ERFaci['CMIP6-constrained'], 95, axis=1), color='0.75', lw=0, label='5-95% range');
-ax[1].fill_between(np.arange(1750,2023), np.percentile(ERFaci['CMIP6-constrained'], 16, axis=1), np.percentile(ERFaci['CMIP6-constrained'], 84, axis=1), color='0.5', lw=0, label='16-84% range');
-ax[1].plot(np.arange(1750,2023), np.percentile(ERFaci['CMIP6-constrained'], 50, axis=1), color='k', label='median', zorder=10)
-ax[1].plot(np.arange(1750,2023), ERFaci['CMIP6-constrained'][:,754], color='cyan')
-ax[1].plot(np.arange(1750,2023), ERFaci['CMIP6-constrained'][:,1076], color='magenta')
-ax[1].plot(np.arange(1750,2023), ERFaci['CMIP6-constrained'][:,18010], color='lime')
+ax[1].fill_between(np.arange(1750,2026), np.percentile(ERFaci['CMIP6-constrained'], 5, axis=1), np.percentile(ERFaci['CMIP6-constrained'], 95, axis=1), color='0.75', lw=0, label='5-95% range');
+ax[1].fill_between(np.arange(1750,2026), np.percentile(ERFaci['CMIP6-constrained'], 16, axis=1), np.percentile(ERFaci['CMIP6-constrained'], 84, axis=1), color='0.5', lw=0, label='16-84% range');
+ax[1].plot(np.arange(1750,2026), np.percentile(ERFaci['CMIP6-constrained'], 50, axis=1), color='k', label='median', zorder=10)
+ax[1].plot(np.arange(1750,2026), ERFaci['CMIP6-constrained'][:,754], color='cyan')
+ax[1].plot(np.arange(1750,2026), ERFaci['CMIP6-constrained'][:,1076], color='magenta')
+ax[1].plot(np.arange(1750,2026), ERFaci['CMIP6-constrained'][:,18010], color='lime')
 ax[1].legend()
-ax[1].set_xlim(1800,2022)
+ax[1].set_xlim(1800,2025)
 ax[1].set_title('ERFaci')
 
-ax[2].fill_between(np.arange(1750,2023), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 5, axis=1), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 95, axis=1), color='0.75', lw=0);
-ax[2].fill_between(np.arange(1750,2023), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 16, axis=1), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 84, axis=1), color='0.5', lw=0);
-ax[2].plot(np.arange(1750,2023), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 50, axis=1), color='k', zorder=10)
-ax[2].plot(np.arange(1750,2023), ERFari['CMIP6-constrained'][:,754]+ERFaci['CMIP6-constrained'][:,754], color='cyan', label='Ensemble 754')
-ax[2].plot(np.arange(1750,2023), ERFari['CMIP6-constrained'][:,1076]+ERFaci['CMIP6-constrained'][:,1076], color='magenta', label='Ensemble 1076')
-ax[2].plot(np.arange(1750,2023), ERFari['CMIP6-constrained'][:,18010]+ERFaci['CMIP6-constrained'][:,18010], color='lime', label='Ensemble 18010')
-ax[2].set_xlim(1800,2022)
+ax[2].fill_between(np.arange(1750,2026), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 5, axis=1), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 95, axis=1), color='0.75', lw=0);
+ax[2].fill_between(np.arange(1750,2026), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 16, axis=1), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 84, axis=1), color='0.5', lw=0);
+ax[2].plot(np.arange(1750,2026), np.percentile(ERFari['CMIP6-constrained']+ERFaci['CMIP6-constrained'], 50, axis=1), color='k', zorder=10)
+ax[2].plot(np.arange(1750,2026), ERFari['CMIP6-constrained'][:,754]+ERFaci['CMIP6-constrained'][:,754], color='cyan', label='Ensemble 754')
+ax[2].plot(np.arange(1750,2026), ERFari['CMIP6-constrained'][:,1076]+ERFaci['CMIP6-constrained'][:,1076], color='magenta', label='Ensemble 1076')
+ax[2].plot(np.arange(1750,2026), ERFari['CMIP6-constrained'][:,18010]+ERFaci['CMIP6-constrained'][:,18010], color='lime', label='Ensemble 18010')
+ax[2].set_xlim(1800,2025)
 ax[2].set_title('Aerosol ERF')
 
 ax[0].set_ylim(-3,0.2)
@@ -616,15 +616,15 @@ in_forcing.drop(
 )
 in_forcing
 in_forcing = in_forcing * scale_df.loc[0,:]
-in_forcing['solar'] = in_forcing['solar'] + np.linspace(0, trend_solar[0], 273)
-in_forcing['aerosol-radiation_interactions'] = ERFari['CMIP6-constrained'][:273,0]
-in_forcing['aerosol-cloud_interactions'] = ERFaci['CMIP6-constrained'][:273,0]
+in_forcing['solar'] = in_forcing['solar'] + np.linspace(0, trend_solar[0], 276)
+in_forcing['aerosol-radiation_interactions'] = ERFari['CMIP6-constrained'][:276,0]
+in_forcing['aerosol-cloud_interactions'] = ERFaci['CMIP6-constrained'][:276,0]
 in_forcing['total'] = in_forcing.sum(axis=1)
 
 # %%
-temp['CMIP6-constrained'] = np.zeros((273, samples))
-ohc['CMIP6-constrained'] = np.zeros((273, samples))
-hflux['CMIP6-constrained'] = np.zeros((273, samples))
+temp['CMIP6-constrained'] = np.zeros((276, samples))
+ohc['CMIP6-constrained'] = np.zeros((276, samples))
+hflux['CMIP6-constrained'] = np.zeros((276, samples))
 for i in tqdm(range(samples)):
     in_forcing = baseline_forcing.copy()
     in_forcing.drop(
@@ -639,15 +639,15 @@ for i in tqdm(range(samples)):
         ], axis=1, inplace=True
     )
     in_forcing = in_forcing * scale_df.loc[i,:]
-    in_forcing['solar'] = in_forcing['solar'] + np.linspace(0, trend_solar[i], 273)
-    in_forcing['aerosol-radiation_interactions'] = ERFari['CMIP6-constrained'][:273,i]
-    in_forcing['aerosol-cloud_interactions'] = ERFaci['CMIP6-constrained'][:273,i]
+    in_forcing['solar'] = in_forcing['solar'] + np.linspace(0, trend_solar[i], 276)
+    in_forcing['aerosol-radiation_interactions'] = ERFari['CMIP6-constrained'][:276,i]
+    in_forcing['aerosol-cloud_interactions'] = ERFaci['CMIP6-constrained'][:276,i]
     in_forcing['total'] = in_forcing.sum(axis=1)
     scm = TwoLayerModel(
         extforce=in_forcing['total'],
         exttime=in_forcing.index,
         tbeg=1750,
-        tend=2023,
+        tend=2026,
         q2x=geoff_sample_df.loc[i,'q4x']/2,
         lamg=geoff_sample_df.loc[i,'lamg'],
         t2x=None,
@@ -655,7 +655,7 @@ for i in tqdm(range(samples)):
         cmix=geoff_sample_df.loc[i,'cmix'],
         cdeep=geoff_sample_df.loc[i,'cdeep'],
         gamma_2l=geoff_sample_df.loc[i,'gamma_2l'],
-        outtime=np.arange(1750.5,2023),
+        outtime=np.arange(1750.5,2026),
         dt=1
     )
     out = scm.run()
@@ -664,31 +664,34 @@ for i in tqdm(range(samples)):
     hflux['CMIP6-constrained'][:,i] = out.hflux
 
 # %%
-pl.fill_between(np.arange(1750,2023), np.percentile(temp['CMIP6-constrained'], 5, axis=1), np.percentile(temp['CMIP6-constrained'], 95, axis=1))
-pl.plot(np.arange(1750,2023), np.median(temp['CMIP6-constrained'], axis=1), color='k')
+pl.fill_between(np.arange(1750,2026), np.percentile(temp['CMIP6-constrained'], 5, axis=1), np.percentile(temp['CMIP6-constrained'], 95, axis=1))
+pl.plot(np.arange(1750,2026), np.median(temp['CMIP6-constrained'], axis=1), color='k')
 
 # %%
-ks['temp']['CMIP6-constrained'] = knutti_score(Tobs, temp['CMIP6-constrained'][100:273, :] + intvar[100:273,:samples], sigma_D=0.12)
+intvar.shape
+
+# %%
+ks['temp']['CMIP6-constrained'] = knutti_score(Tobs, temp['CMIP6-constrained'][100:275, :] + intvar[100:275,:samples], sigma_D=0.12)
     # unchanged sigma_D for temperature; slightly unsatisfactory since it's not symmetric
-ks['ohc']['CMIP6-constrained'] = simple_weight(465.3, 10*(ohc['CMIP6-constrained'][270,:]-ohc['CMIP6-constrained'][221,:]), sigma_D=66)
+ks['ohc']['CMIP6-constrained'] = simple_weight(479.4319402, 10*(ohc['CMIP6-constrained'][270,:]-ohc['CMIP6-constrained'][221,:]), sigma_D=66)
     # ohc sigma_D range comes from fair-calibrate 1.4.1 which is based on IGCC 2022 and is to 2020 not 2018
 ks['multi']['CMIP6-constrained'] = (ks['temp']['CMIP6-constrained']*ks['ohc']['CMIP6-constrained'])/(np.sum(ks['temp']['CMIP6-constrained']*ks['ohc']['CMIP6-constrained']))
 
 # %%
-print(weighted_percentile(ERFari['CMIP6-constrained'][272,:]+ERFaci['CMIP6-constrained'][272,:], ks['temp']['CMIP6-constrained'][:], [.05,.16,.5,.84,.95]))
-print(weighted_percentile(ERFari['CMIP6-constrained'][272,:]+ERFaci['CMIP6-constrained'][272,:], ks['ohc']['CMIP6-constrained'][:], [.05,.16,.5,.84,.95]))
-print(weighted_percentile(ERFari['CMIP6-constrained'][272,:]+ERFaci['CMIP6-constrained'][272,:], ks['multi']['CMIP6-constrained'][:], [.05,.16,.5,.84,.95]))
+print(weighted_percentile(ERFari['CMIP6-constrained'][275,:]+ERFaci['CMIP6-constrained'][275,:], ks['temp']['CMIP6-constrained'][:], [.05,.16,.5,.84,.95]))
+print(weighted_percentile(ERFari['CMIP6-constrained'][275,:]+ERFaci['CMIP6-constrained'][275,:], ks['ohc']['CMIP6-constrained'][:], [.05,.16,.5,.84,.95]))
+print(weighted_percentile(ERFari['CMIP6-constrained'][275,:]+ERFaci['CMIP6-constrained'][275,:], ks['multi']['CMIP6-constrained'][:], [.05,.16,.5,.84,.95]))
 
 # %%
-os.makedirs('../data_output/results/igcc_2022/', exist_ok=True)
+os.makedirs('../data_output/results/igcc_2025/', exist_ok=True)
 
 # %%
-save_dict_to_hdf5(ERFari, '../data_output/results/igcc_2022/ERFari.h5')
-save_dict_to_hdf5(ERFaci, '../data_output/results/igcc_2022/ERFaci.h5')
-save_dict_to_hdf5(temp, '../data_output/results/igcc_2022/temp.h5')
-save_dict_to_hdf5(ks, '../data_output/results/igcc_2022/knutti_score.h5')
-save_dict_to_hdf5(ohc, '../data_output/results/igcc_2022/ohc.h5')
-save_dict_to_hdf5(hflux, '../data_output/results/igcc_2022/hflux.h5')
+save_dict_to_hdf5(ERFari, '../data_output/results/igcc_2025/ERFari.h5')
+save_dict_to_hdf5(ERFaci, '../data_output/results/igcc_2025/ERFaci.h5')
+save_dict_to_hdf5(temp, '../data_output/results/igcc_2025/temp.h5')
+save_dict_to_hdf5(ks, '../data_output/results/igcc_2025/knutti_score.h5')
+save_dict_to_hdf5(ohc, '../data_output/results/igcc_2025/ohc.h5')
+save_dict_to_hdf5(hflux, '../data_output/results/igcc_2025/hflux.h5')
 
 # %%
 # Throw TCR into the mix
@@ -765,4 +768,6 @@ for expt in tqdm(expts):
             ) = weighted_percentile(ERFari[expt][year,:]+ERFaci[expt][year,:], ks[constraint][expt], [.05,.16,.5,.84,.95])
 
 # %%
-save_dict_to_hdf5(pc, '../data_output/results/igcc_2022/pc.h5')
+save_dict_to_hdf5(pc, '../data_output/results/igcc_2025/pc.h5')
+
+# %%
